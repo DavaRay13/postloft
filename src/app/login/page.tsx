@@ -65,7 +65,7 @@ export default function LoginPage() {
             <Sparkles className="w-6 h-6 text-white" />
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-100 via-indigo-200 to-slate-200">
-            loftPOS
+            SeblakSS POS
           </h1>
           <p className="text-sm text-slate-400 mt-2">
             Owner Dashboard Administration
@@ -144,7 +144,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="text-center text-xs text-slate-500 mt-8">
-          &copy; {new Date().getFullYear()} loftPOS. All rights reserved.
+          &copy; {new Date().getFullYear()} SeblakSS POS. All rights reserved.
         </p>
       </div>
     </div>

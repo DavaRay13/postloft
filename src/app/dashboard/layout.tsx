@@ -102,7 +102,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Sparkles className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold tracking-tight text-slate-100">loftPOS</h1>
+              <h1 className="text-lg font-bold tracking-tight text-slate-100">SeblakSS POS</h1>
               <p className="text-[9px] uppercase tracking-wider text-indigo-400 font-bold">Admin Dashboard</p>
             </div>
           </div>
@@ -161,7 +161,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-indigo-400" />
-            <span className="text-sm font-bold">loftPOS</span>
+            <span className="text-sm font-bold">SeblakSS POS</span>
           </div>
           <span className="text-xs text-indigo-400 font-mono">{currentTime}</span>
         </header>
@@ -172,7 +172,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </main>
 
         <footer className="mt-auto border-t border-slate-800/50 py-4 text-center text-xs text-slate-500">
-          &copy; {new Date().getFullYear()} loftPOS Admin Dashboard. All rights reserved.
+          &copy; {new Date().getFullYear()} SeblakSS POS Admin Dashboard. All rights reserved.
         </footer>
       </div>
     </div>

@@ -14,8 +14,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "loftPOS | Owner Dashboard",
-  description: "Real-time administrator dashboard and reports for loftPOS transactions.",
+  title: "SeblakSS POS | Owner Dashboard",
+  description: "Real-time administrator dashboard and reports for SeblakSS POS transactions.",
 };
 
 export default function RootLayout({

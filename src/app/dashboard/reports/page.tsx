@@ -366,7 +366,7 @@ export default function ReportsPage() {
         ];
 
         const rangeLabel = filterRange === 'custom' ? `${customStart}_to_${customEnd}` : filterRange;
-        XLSX.writeFile(workbook, `loftPOS_Laporan_Harian_${rangeLabel}.xlsx`);
+        XLSX.writeFile(workbook, `SeblakSS_POS_Laporan_Harian_${rangeLabel}.xlsx`);
       } else {
         // Single Day: Export details per transaction
         interface SingleDayReportRow {
@@ -420,7 +420,7 @@ export default function ReportsPage() {
         ];
 
         const rangeLabel = filterRange === 'custom' ? `${customStart}_to_${customEnd}` : filterRange;
-        XLSX.writeFile(workbook, `loftPOS_Detail_Transaksi_${rangeLabel}.xlsx`);
+        XLSX.writeFile(workbook, `SeblakSS_POS_Detail_Transaksi_${rangeLabel}.xlsx`);
       }
     } catch (e) {
       alert(`Export gagal: ${e instanceof Error ? e.message : 'Unknown error'}`);
