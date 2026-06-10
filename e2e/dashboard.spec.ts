@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('loftPOS Admin Dashboard E2E Tests', () => {
+test.describe('SeblakSS POS Admin Dashboard E2E Tests', () => {
 
   test('Route Protection: Redirects unauthenticated users to /login', async ({ page }) => {
     // Navigate directly to dashboard
@@ -8,7 +8,7 @@ test.describe('loftPOS Admin Dashboard E2E Tests', () => {
     
     // Check that we are redirected to /login
     await expect(page).toHaveURL(/\/login/);
-    await expect(page.locator('h1')).toContainText('loftPOS');
+    await expect(page.locator('h1')).toContainText('SeblakSS POS');
     await expect(page.locator('button[type="submit"]')).toContainText('Sign In');
   });
 
