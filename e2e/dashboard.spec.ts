@@ -55,6 +55,20 @@ test.describe('SeblakSS POS Admin Dashboard E2E Tests', () => {
       });
     });
 
+    // Intercept admin-users api
+    await page.route('**/api/admin-users', async route => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          users: [
+            { id: 'mock-uuid', email: 'owner@loftpos.com', role: 'admin' },
+            { id: 'mock-cashier-1', email: 'cashier1@loftpos.com', role: 'cashier' }
+          ]
+        })
+      });
+    });
+
     // Intercept initial transaction loading
     await page.route('**/rest/v1/transactions*', async route => {
       await route.fulfill({

@@ -29,6 +29,7 @@ interface Transaction {
   daily_queue_number: number | null;
   created_at: string;
   additions?: string | null;
+  cashier_id?: string | null;
 }
 
 interface TransactionItem {
@@ -79,6 +80,8 @@ export default function ReportsPage() {
   const [filterText, setFilterText] = useState('');
   const [filterRange, setFilterRange] = useState<'today' | '7days' | '1month' | 'custom'>('7days');
   const [expandedDates, setExpandedDates] = useState<{ [key: string]: boolean }>({});
+  const [cashierMap, setCashierMap] = useState<{[id: string]: string}>({});
+  const [selectedCashierFilter, setSelectedCashierFilter] = useState<string>('all');
 
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [txItems, setTxItems] = useState<TransactionItem[]>([]);
@@ -164,22 +167,60 @@ export default function ReportsPage() {
   }, [filterRange, customStart, customEnd, todayStr]);
 
   useEffect(() => {
+    const fetchCashiers = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const res = await fetch('/api/admin-users', {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+          });
+          if (res.ok) {
+            const usersData = await res.json();
+            const mapping: { [key: string]: string } = {};
+            usersData.users?.forEach((u: { id: string; email: string }) => {
+              mapping[u.id] = u.email;
+            });
+            setCashierMap(mapping);
+          }
+        }
+      } catch (e) {
+        console.error('Gagal mengambil data kasir:', e);
+      }
+    };
+    fetchCashiers();
+  }, []);
+
+  useEffect(() => {
     fetchReportData();
   }, [fetchReportData]);
 
   // Aggregate stats
   const stats = (() => {
     let total = 0, cash = 0, qris = 0, count = 0;
+    const cashierRevenue: { [cashierId: string]: number } = {};
+
     transactions.forEach((t) => {
       if (t.status === 'PAID') {
         const amt = Number(t.amount);
-        total += amt;
-        count++;
-        if (t.payment_method === 'CASH') cash += amt;
-        if (t.payment_method === 'QRIS') qris += amt;
+        const cid = t.cashier_id || 'system';
+        cashierRevenue[cid] = (cashierRevenue[cid] || 0) + amt;
+
+        const matchesCashier = 
+          selectedCashierFilter === 'all' ||
+          (selectedCashierFilter === 'system' && !t.cashier_id) ||
+          t.cashier_id === selectedCashierFilter;
+
+        if (matchesCashier) {
+          total += amt;
+          count++;
+          if (t.payment_method === 'CASH') cash += amt;
+          if (t.payment_method === 'QRIS') qris += amt;
+        }
       }
     });
-    return { total, cash, qris, count };
+    return { total, cash, qris, count, cashierRevenue };
   })();
 
   // Aggregate daily revenue for SVG chart
@@ -215,12 +256,19 @@ export default function ReportsPage() {
     // Populate data
     transactions.forEach((t) => {
       if (t.status === 'PAID') {
-        const tDate = t.created_at.substring(0, 10); // YYYY-MM-DD
-        if (dailyMap[tDate] !== undefined) {
-          const amt = Number(t.amount);
-          dailyMap[tDate].total += amt;
-          if (t.payment_method === 'CASH') dailyMap[tDate].cash += amt;
-          if (t.payment_method === 'QRIS') dailyMap[tDate].qris += amt;
+        const matchesCashier = 
+          selectedCashierFilter === 'all' ||
+          (selectedCashierFilter === 'system' && !t.cashier_id) ||
+          t.cashier_id === selectedCashierFilter;
+
+        if (matchesCashier) {
+          const tDate = t.created_at.substring(0, 10); // YYYY-MM-DD
+          if (dailyMap[tDate] !== undefined) {
+            const amt = Number(t.amount);
+            dailyMap[tDate].total += amt;
+            if (t.payment_method === 'CASH') dailyMap[tDate].cash += amt;
+            if (t.payment_method === 'QRIS') dailyMap[tDate].qris += amt;
+          }
         }
       }
     });
@@ -243,11 +291,19 @@ export default function ReportsPage() {
   const maxDailyVal = Math.max(...dailyData.map((d) => d.total), 100000);
 
   // Filtered transactions for the table search
-  const filteredTransactions = transactions.filter((t) =>
-    (t.trx_number && t.trx_number.toLowerCase().includes(filterText.toLowerCase())) ||
-    t.payment_method.toLowerCase().includes(filterText.toLowerCase()) ||
-    t.status.toLowerCase().includes(filterText.toLowerCase())
-  );
+  const filteredTransactions = transactions.filter((t) => {
+    const matchesSearch = 
+      (t.trx_number && t.trx_number.toLowerCase().includes(filterText.toLowerCase())) ||
+      t.payment_method.toLowerCase().includes(filterText.toLowerCase()) ||
+      t.status.toLowerCase().includes(filterText.toLowerCase());
+
+    const matchesCashier = 
+      selectedCashierFilter === 'all' ||
+      (selectedCashierFilter === 'system' && !t.cashier_id) ||
+      t.cashier_id === selectedCashierFilter;
+
+    return matchesSearch && matchesCashier;
+  });
 
   // Group transactions by date string YYYY-MM-DD (WIB)
   const groupedTransactions = (() => {
@@ -290,7 +346,7 @@ export default function ReportsPage() {
   const handleExcelExport = async () => {
     setExporting(true);
     try {
-      if (transactions.length === 0) {
+      if (filteredTransactions.length === 0) {
         alert('Tidak ada data transaksi untuk diekspor.');
         return;
       }
@@ -343,7 +399,7 @@ export default function ReportsPage() {
         });
 
         // Aggregate PAID transactions
-        transactions.forEach((t) => {
+        filteredTransactions.forEach((t) => {
           if (t.status === 'PAID') {
             const tDate = t.created_at.substring(0, 10); // YYYY-MM-DD
             if (dailyMap[tDate]) {
@@ -420,16 +476,18 @@ export default function ReportsPage() {
           'No': string | number;
           'No Trx': string;
           'No Antrian': string | number;
+          'Kasir': string;
           'Jumlah (IDR)': number;
           'Metode': string;
           'Status': string;
           'Waktu (WIB)': string;
         }
 
-        const reportRows: SingleDayReportRow[] = transactions.map((t, index) => ({
+        const reportRows: SingleDayReportRow[] = filteredTransactions.map((t, index) => ({
           'No': index + 1,
           'No Trx': t.trx_number || 'N/A',
           'No Antrian': t.daily_queue_number || '-',
+          'Kasir': cashierMap[t.cashier_id || ''] || 'Sistem / Tanpa Kasir',
           'Jumlah (IDR)': Number(t.amount),
           'Metode': t.payment_method,
           'Status': t.status,
@@ -437,7 +495,7 @@ export default function ReportsPage() {
         }));
 
         // Calculate total PAID omset
-        const totalPaidOmset = transactions
+        const totalPaidOmset = filteredTransactions
           .filter(t => t.status === 'PAID')
           .reduce((sum, t) => sum + Number(t.amount), 0);
 
@@ -445,6 +503,7 @@ export default function ReportsPage() {
           'No': 'Total PAID',
           'No Trx': '',
           'No Antrian': '',
+          'Kasir': '',
           'Jumlah (IDR)': totalPaidOmset,
           'Metode': '',
           'Status': '',
@@ -460,6 +519,7 @@ export default function ReportsPage() {
           { wch: 12 }, // No
           { wch: 22 }, // No Trx
           { wch: 10 }, // No Antrian
+          { wch: 25 }, // Kasir
           { wch: 16 }, // Jumlah (IDR)
           { wch: 10 }, // Metode
           { wch: 10 }, // Status
@@ -492,6 +552,27 @@ export default function ReportsPage() {
 
         {/* Filter Buttons & Export */}
         <div className="flex flex-wrap items-center gap-3">
+          {/* Dropdown filter cashier */}
+          <div className="relative">
+            <select
+              value={selectedCashierFilter}
+              onChange={(e) => setSelectedCashierFilter(e.target.value)}
+              className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 focus:outline-none focus:border-indigo-500 text-xs font-semibold appearance-none pr-8 cursor-pointer"
+              style={{
+                backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%2394a3b8\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")',
+                backgroundPosition: 'right 0.5rem center',
+                backgroundSize: '1.25em 1.25em',
+                backgroundRepeat: 'no-repeat'
+              }}
+            >
+              <option value="all">Semua Kasir</option>
+              <option value="system">Sistem / Tanpa Kasir</option>
+              {Object.entries(cashierMap).map(([id, email]) => (
+                <option key={id} value={id}>{email}</option>
+              ))}
+            </select>
+          </div>
+
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-1 flex gap-1 text-xs">
             <button
               onClick={() => setFilterRange('today')}
@@ -756,6 +837,57 @@ export default function ReportsPage() {
         )}
       </section>
 
+      {/* CASHIER REVENUE BREAKDOWN */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-4">
+          <div>
+            <h3 className="text-base font-bold text-slate-200">Pendapatan per Akun Kasir</h3>
+            <p className="text-xs text-slate-400">Total penjualan sukses kasir pada rentang waktu terpilih</p>
+          </div>
+          <div className="divide-y divide-slate-800/60 max-h-[200px] overflow-y-auto pr-1">
+            {Object.keys(stats.cashierRevenue).length === 0 ? (
+              <p className="text-xs text-slate-500 italic py-4">Belum ada transaksi pada periode ini.</p>
+            ) : (
+              Object.entries(stats.cashierRevenue)
+                .sort((a, b) => b[1] - a[1])
+                .map(([cid, revenue]) => {
+                  const email = cashierMap[cid] || (cid === 'system' ? 'Sistem / Tanpa Kasir' : 'Tidak Diketahui');
+                  const percent = stats.total > 0 ? Math.round((revenue / stats.total) * 100) : 0;
+                  return (
+                    <div key={cid} className="py-3 flex items-center justify-between text-xs gap-4">
+                      <div className="space-y-1 flex-1">
+                        <div className="flex justify-between text-slate-300 font-medium">
+                          <span>{email}</span>
+                          <span className="font-bold text-indigo-400">{percent}%</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden">
+                          <div className="h-full bg-indigo-500" style={{ width: `${percent}%` }} />
+                        </div>
+                      </div>
+                      <div className="text-right font-bold text-slate-200 min-w-[90px]">
+                        {formatMoney(revenue)}
+                      </div>
+                    </div>
+                  );
+                })
+            )}
+          </div>
+        </div>
+
+        {/* Notes Card */}
+        <div className="backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
+          <div className="space-y-3">
+            <h3 className="text-base font-bold text-slate-200">Analisis Kasir</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Analisis ini menunjukkan kontribusi omset dari masing-masing akun kasir yang terdaftar. Data diperbarui secara dinamis mengikuti filter tanggal di atas. Gunakan filter kasir pada tombol di kanan atas untuk memfokuskan grafik tren dan detail transaksi pada satu kasir tertentu.
+            </p>
+          </div>
+          <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-xl p-3 text-[11px] text-indigo-400 leading-normal">
+            💡 **Tip Audit:** Untuk laporan penutupan shift, pilih filter kasir yang bersangkutan dan gunakan tombol **Ekspor Excel** untuk mengunduh laporan penjualan terperinci mereka.
+          </div>
+        </div>
+      </section>
+
       {/* DETAILED TRANSACTIONS LIST */}
       <section className="backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 shadow-xl flex flex-col">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
@@ -891,6 +1023,7 @@ export default function ReportsPage() {
                           <tr>
                             <th className="px-4 py-2.5">#</th>
                             <th className="px-4 py-2.5">No Trx</th>
+                            <th className="px-4 py-2.5">Kasir</th>
                             <th className="px-4 py-2.5">Metode</th>
                             <th className="px-4 py-2.5">Jumlah</th>
                             <th className="px-4 py-2.5">Status</th>
@@ -900,12 +1033,15 @@ export default function ReportsPage() {
                         </thead>
                         <tbody className="divide-y divide-slate-800/40">
                           {group.transactions.map((t) => (
-                            <tr key={t.id} className="hover:bg-slate-900/30 transition-colors duration-150">
+                             <tr key={t.id} className="hover:bg-slate-900/30 transition-colors duration-150">
                               <td className="px-4 py-2.5 text-indigo-400 font-bold">
                                 {t.daily_queue_number ? `#${t.daily_queue_number}` : '-'}
                               </td>
                               <td className="px-4 py-2.5 font-bold text-slate-300">
                                 {t.trx_number || 'PENDING'}
+                              </td>
+                              <td className="px-4 py-2.5 text-slate-300 font-medium truncate max-w-[120px]" title={cashierMap[t.cashier_id || ''] || 'Sistem / Tanpa Kasir'}>
+                                {cashierMap[t.cashier_id || ''] || 'Sistem / Tanpa Kasir'}
                               </td>
                               <td className="px-4 py-2.5">
                                 <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-medium text-[10px] ${
@@ -1019,6 +1155,12 @@ export default function ReportsPage() {
                       : 'bg-yellow-950/30 text-yellow-400 border border-yellow-900/40'
                   }`}>
                     {selectedTx.status}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block">Kasir</span>
+                  <span className="text-slate-300 font-semibold truncate block" title={cashierMap[selectedTx.cashier_id || ''] || 'Sistem / Tanpa Kasir'}>
+                    {cashierMap[selectedTx.cashier_id || ''] || 'Sistem / Tanpa Kasir'}
                   </span>
                 </div>
               </div>

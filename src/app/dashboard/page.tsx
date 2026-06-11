@@ -28,6 +28,8 @@ interface Transaction {
   daily_queue_number: number | null;
   created_at: string;
   additions?: string | null;
+  order_type: 'dine_in' | 'takeaway';
+  cashier_id?: string | null;
 }
 
 interface TransactionItem {
@@ -63,6 +65,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filterText, setFilterText] = useState('');
+  const [cashierMap, setCashierMap] = useState<{[id: string]: string}>({});
 
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [txItems, setTxItems] = useState<TransactionItem[]>([]);
@@ -101,6 +104,27 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchData = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const res = await fetch('/api/admin-users', {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+          });
+          if (res.ok) {
+            const usersData = await res.json();
+            const mapping: { [key: string]: string } = {};
+            usersData.users?.forEach((u: { id: string; email: string }) => {
+              mapping[u.id] = u.email;
+            });
+            setCashierMap(mapping);
+          }
+        }
+      } catch (e) {
+        console.error('Gagal mengambil data kasir:', e);
+      }
+
       const now = new Date();
       const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' });
       const todayStr = formatter.format(now); // YYYY-MM-DD
@@ -157,7 +181,9 @@ export default function DashboardPage() {
 
   // Stats (WIB timezone aware)
   const todayStats = (() => {
-    let total = 0, cash = 0, qris = 0, count = 0;
+    let total = 0, cash = 0, qris = 0, count = 0, dineIn = 0, takeaway = 0;
+    const cashierRevenue: { [cashierId: string]: number } = {};
+
     transactions.forEach((t) => {
       if (t.status === 'PAID') {
         const amt = Number(t.amount);
@@ -165,9 +191,14 @@ export default function DashboardPage() {
         count++;
         if (t.payment_method === 'CASH') cash += amt;
         if (t.payment_method === 'QRIS') qris += amt;
+        if (t.order_type === 'dine_in') dineIn++;
+        if (t.order_type === 'takeaway') takeaway++;
+
+        const cid = t.cashier_id || 'system';
+        cashierRevenue[cid] = (cashierRevenue[cid] || 0) + amt;
       }
     });
-    return { total, cash, qris, count };
+    return { total, cash, qris, count, dineIn, takeaway, cashierRevenue };
   })();
 
   const filteredTransactions = transactions.filter((t) =>
@@ -215,7 +246,10 @@ export default function DashboardPage() {
             <div className="p-2.5 bg-amber-500/10 rounded-xl text-amber-400"><UsersIcon className="w-4 h-4" /></div>
           </div>
           <h2 className="text-2xl font-extrabold tracking-tight text-white">{todayStats.count}</h2>
-          <p className="text-[10px] text-amber-400 mt-1 flex items-center gap-1 font-medium"><span>●</span> Transaksi sukses</p>
+          <div className="flex gap-2 mt-1">
+            <p className="text-[10px] text-blue-400 flex items-center gap-1 font-medium"><span>●</span> Dine In: {todayStats.dineIn}</p>
+            <p className="text-[10px] text-orange-400 flex items-center gap-1 font-medium"><span>●</span> Takeaway: {todayStats.takeaway}</p>
+          </div>
         </div>
 
         {/* Cash */}
@@ -269,13 +303,15 @@ export default function DashboardPage() {
              <table className="w-full text-left text-xs border-collapse">
               <thead className="bg-slate-900 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
                 <tr>
-                  <th className="px-4 py-3">#</th>
-                  <th className="px-4 py-3">No Trx</th>
-                  <th className="px-4 py-3">Metode</th>
-                  <th className="px-4 py-3">Jumlah</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Waktu (WIB)</th>
-                  <th className="px-4 py-3 text-center">Aksi</th>
+                  <th className="px-4 py-3 font-semibold uppercase tracking-wider">Antrean</th>
+                  <th className="px-4 py-3 font-semibold uppercase tracking-wider">No. Trx</th>
+                  <th className="px-4 py-3 font-semibold uppercase tracking-wider">Kasir</th>
+                  <th className="px-4 py-3 font-semibold uppercase tracking-wider">Metode</th>
+                  <th className="px-4 py-3 font-semibold uppercase tracking-wider">Tipe</th>
+                  <th className="px-4 py-3 font-semibold uppercase tracking-wider">Total</th>
+                  <th className="px-4 py-3 font-semibold uppercase tracking-wider">Status</th>
+                  <th className="px-4 py-3 font-semibold uppercase tracking-wider">Waktu</th>
+                  <th className="px-4 py-3 font-semibold uppercase tracking-wider text-center">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
@@ -288,6 +324,9 @@ export default function DashboardPage() {
                     <tr key={t.id} className="hover:bg-slate-900/30 transition-colors duration-150">
                       <td className="px-4 py-3 text-indigo-400 font-bold">{t.daily_queue_number ? `#${t.daily_queue_number}` : '-'}</td>
                       <td className="px-4 py-3 font-bold text-slate-300">{t.trx_number || 'PENDING'}</td>
+                      <td className="px-4 py-3 text-slate-300 font-medium truncate max-w-[120px]" title={cashierMap[t.cashier_id || ''] || 'Sistem / Tanpa Kasir'}>
+                        {cashierMap[t.cashier_id || ''] || 'Sistem / Tanpa Kasir'}
+                      </td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-medium text-[10px] ${
                           t.payment_method === 'QRIS'
@@ -296,6 +335,15 @@ export default function DashboardPage() {
                         }`}>
                           {t.payment_method === 'QRIS' ? <QrCode className="w-3 h-3" /> : <DollarSign className="w-3 h-3" />}
                           {t.payment_method}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-medium text-[10px] ${
+                          t.order_type === 'dine_in'
+                            ? 'bg-blue-950/40 text-blue-300 border border-blue-900/50'
+                            : 'bg-orange-950/40 text-orange-300 border border-orange-900/50'
+                        }`}>
+                          {t.order_type === 'dine_in' ? 'Dine In' : 'Takeaway'}
                         </span>
                       </td>
                       <td className="px-4 py-3 font-semibold text-slate-100">
@@ -377,6 +425,32 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {/* Cashier Revenue Stats */}
+            <div className="space-y-3 pt-4 border-t border-slate-800/60">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Pendapatan Kasir Hari Ini
+              </h4>
+              <div className="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+                {Object.keys(todayStats.cashierRevenue).length === 0 ? (
+                  <p className="text-xs text-slate-500 italic">Belum ada data pendapatan kasir.</p>
+                ) : (
+                  Object.entries(todayStats.cashierRevenue)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([cid, revenue]) => {
+                      const email = cashierMap[cid] || (cid === 'system' ? 'Sistem / Tanpa Kasir' : 'Tidak Diketahui');
+                      return (
+                        <div key={cid} className="flex justify-between items-center bg-slate-950/40 border border-slate-800/40 rounded-xl px-3 py-2 text-xs">
+                          <span className="text-slate-300 font-medium truncate max-w-[150px]" title={email}>
+                            {email}
+                          </span>
+                          <span className="font-bold text-indigo-400">{formatMoney(revenue)}</span>
+                        </div>
+                      );
+                    })
+                )}
+              </div>
+            </div>
+
             <div className="bg-slate-950/50 border border-slate-800/60 rounded-xl p-4 space-y-2">
               <div className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider">Catatan Hari Ini</div>
               <p className="text-xs text-slate-400 leading-relaxed">
@@ -449,6 +523,12 @@ export default function DashboardPage() {
                       : 'bg-yellow-950/30 text-yellow-400 border border-yellow-900/40'
                   }`}>
                     {selectedTx.status}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block">Kasir</span>
+                  <span className="text-slate-300 font-semibold truncate block" title={cashierMap[selectedTx.cashier_id || ''] || 'Sistem / Tanpa Kasir'}>
+                    {cashierMap[selectedTx.cashier_id || ''] || 'Sistem / Tanpa Kasir'}
                   </span>
                 </div>
               </div>
