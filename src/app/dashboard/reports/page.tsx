@@ -1017,84 +1017,151 @@ export default function ReportsPage() {
 
                   {/* Accordion Body */}
                   {isExpanded && (
-                    <div className="overflow-x-auto bg-slate-950/10">
-                      <table className="w-full text-left text-xs border-collapse">
-                        <thead className="bg-slate-900/60 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800/80">
-                          <tr>
-                            <th className="px-4 py-2.5">#</th>
-                            <th className="px-4 py-2.5">No Trx</th>
-                            <th className="px-4 py-2.5">Kasir</th>
-                            <th className="px-4 py-2.5">Metode</th>
-                            <th className="px-4 py-2.5">Jumlah</th>
-                            <th className="px-4 py-2.5">Status</th>
-                            <th className="px-4 py-2.5">Waktu (WIB)</th>
-                            <th className="px-4 py-2.5 text-center">Aksi</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-800/40">
-                          {group.transactions.map((t) => (
-                             <tr key={t.id} className="hover:bg-slate-900/30 transition-colors duration-150">
-                              <td className="px-4 py-2.5 text-indigo-400 font-bold">
+                    <div className="bg-slate-950/10">
+                      {/* Desktop Table View */}
+                      <div className="hidden md:block overflow-x-auto">
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead className="bg-slate-900/60 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800/80">
+                            <tr>
+                              <th className="px-4 py-2.5">#</th>
+                              <th className="px-4 py-2.5">No Trx</th>
+                              <th className="px-4 py-2.5">Kasir</th>
+                              <th className="px-4 py-2.5">Metode</th>
+                              <th className="px-4 py-2.5">Jumlah</th>
+                              <th className="px-4 py-2.5">Status</th>
+                              <th className="px-4 py-2.5">Waktu (WIB)</th>
+                              <th className="px-4 py-2.5 text-center">Aksi</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-800/40">
+                            {group.transactions.map((t) => (
+                               <tr key={t.id} className="hover:bg-slate-900/30 transition-colors duration-150">
+                                <td className="px-4 py-2.5 text-indigo-400 font-bold">
+                                  {t.daily_queue_number ? `#${t.daily_queue_number}` : '-'}
+                                </td>
+                                <td className="px-4 py-2.5 font-bold text-slate-300">
+                                  {t.trx_number || 'PENDING'}
+                                </td>
+                                <td className="px-4 py-2.5 text-slate-300 font-medium truncate max-w-[120px]" title={cashierMap[t.cashier_id || ''] || 'Sistem / Tanpa Kasir'}>
+                                  {cashierMap[t.cashier_id || ''] || 'Sistem / Tanpa Kasir'}
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-medium text-[10px] ${
+                                    t.payment_method === 'QRIS'
+                                      ? 'bg-violet-950/40 text-violet-300 border border-violet-900/50'
+                                      : 'bg-emerald-950/40 text-emerald-300 border border-emerald-900/50'
+                                  }`}>
+                                    {t.payment_method === 'QRIS' ? <QrCode className="w-3 h-3" /> : <DollarSign className="w-3 h-3" />}
+                                    {t.payment_method}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-2.5 font-semibold text-slate-100">
+                                  <div>{formatMoney(Number(t.amount))}</div>
+                                  {t.additions && (
+                                    <div className="text-[10px] text-slate-500 font-normal mt-0.5" title={t.additions.split('+').map(x => Number(x).toLocaleString('id-ID')).join(' + ')}>
+                                      {t.additions.split('+').map(x => Number(x).toLocaleString('id-ID')).join(' + ')}
+                                    </div>
+                                  )}
+                                </td>
+                                <td className="px-4 py-2.5">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md font-semibold text-[9px] ${
+                                    t.status === 'PAID'
+                                      ? 'bg-green-950/30 text-green-400 border border-green-900/40'
+                                      : t.status === 'FAILED'
+                                      ? 'bg-red-950/30 text-red-400 border border-red-900/40'
+                                      : 'bg-yellow-950/30 text-yellow-400 border border-yellow-900/40'
+                                  }`}>
+                                    {t.status}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-2.5 text-slate-400">{toWIB(t.created_at)}</td>
+                                <td className="px-4 py-2.5 text-center">
+                                  <div className="flex items-center justify-center gap-1">
+                                    <button
+                                      onClick={() => handleViewDetails(t)}
+                                      className="p-1.5 text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/5 rounded-lg transition-colors"
+                                      title="Lihat Rincian"
+                                    >
+                                      <Eye className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteTransaction(t.id)}
+                                      className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors"
+                                      title="Hapus Transaksi"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Mobile Card View */}
+                      <div className="block md:hidden p-3 space-y-3">
+                        {group.transactions.map((t) => (
+                          <div key={t.id} className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-3.5 space-y-3">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-indigo-400 font-bold">
                                 {t.daily_queue_number ? `#${t.daily_queue_number}` : '-'}
-                              </td>
-                              <td className="px-4 py-2.5 font-bold text-slate-300">
-                                {t.trx_number || 'PENDING'}
-                              </td>
-                              <td className="px-4 py-2.5 text-slate-300 font-medium truncate max-w-[120px]" title={cashierMap[t.cashier_id || ''] || 'Sistem / Tanpa Kasir'}>
-                                {cashierMap[t.cashier_id || ''] || 'Sistem / Tanpa Kasir'}
-                              </td>
-                              <td className="px-4 py-2.5">
-                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-medium text-[10px] ${
-                                  t.payment_method === 'QRIS'
-                                    ? 'bg-violet-950/40 text-violet-300 border border-violet-900/50'
-                                    : 'bg-emerald-950/40 text-emerald-300 border border-emerald-900/50'
-                                }`}>
-                                  {t.payment_method === 'QRIS' ? <QrCode className="w-3 h-3" /> : <DollarSign className="w-3 h-3" />}
-                                  {t.payment_method}
-                                </span>
-                              </td>
-                              <td className="px-4 py-2.5 font-semibold text-slate-100">
-                                <div>{formatMoney(Number(t.amount))}</div>
+                              </span>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-md font-semibold text-[9px] ${
+                                t.status === 'PAID'
+                                  ? 'bg-green-950/30 text-green-400 border border-green-900/40'
+                                  : t.status === 'FAILED'
+                                  ? 'bg-red-950/30 text-red-400 border border-red-900/40'
+                                  : 'bg-yellow-950/30 text-yellow-400 border border-yellow-900/40'
+                              }`}>
+                                {t.status}
+                              </span>
+                            </div>
+
+                            <div className="flex justify-between items-start text-xs gap-4">
+                              <div className="min-w-0">
+                                <div className="font-bold text-slate-200 truncate">{t.trx_number || 'PENDING'}</div>
+                                <div className="text-[10px] text-slate-500 mt-0.5 font-medium truncate">
+                                  Kasir: {cashierMap[t.cashier_id || ''] || 'Sistem'}
+                                </div>
+                                <div className="text-[10px] text-slate-500 mt-0.5">{toWIB(t.created_at)}</div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <div className="font-bold text-slate-100">{formatMoney(Number(t.amount))}</div>
                                 {t.additions && (
-                                  <div className="text-[10px] text-slate-500 font-normal mt-0.5" title={t.additions.split('+').map(x => Number(x).toLocaleString('id-ID')).join(' + ')}>
-                                    {t.additions.split('+').map(x => Number(x).toLocaleString('id-ID')).join(' + ')}
+                                  <div className="text-[9px] text-slate-500 mt-0.5 font-mono">
+                                    +{t.additions.split('+').map(x => Number(x).toLocaleString('id-ID')).join(' + ')}
                                   </div>
                                 )}
-                              </td>
-                              <td className="px-4 py-2.5">
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded-md font-semibold text-[9px] ${
-                                  t.status === 'PAID'
-                                    ? 'bg-green-950/30 text-green-400 border border-green-900/40'
-                                    : t.status === 'FAILED'
-                                    ? 'bg-red-950/30 text-red-400 border border-red-900/40'
-                                    : 'bg-yellow-950/30 text-yellow-400 border border-yellow-900/40'
-                                }`}>
-                                  {t.status}
-                                </span>
-                              </td>
-                              <td className="px-4 py-2.5 text-slate-400">{toWIB(t.created_at)}</td>
-                              <td className="px-4 py-2.5 text-center">
-                                <div className="flex items-center justify-center gap-1">
-                                  <button
-                                    onClick={() => handleViewDetails(t)}
-                                    className="p-1.5 text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/5 rounded-lg transition-colors"
-                                    title="Lihat Rincian"
-                                  >
-                                    <Eye className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteTransaction(t.id)}
-                                    className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors"
-                                    title="Hapus Transaksi"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-between pt-2 border-t border-slate-800/50 text-[10px]">
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${
+                                t.payment_method === 'QRIS'
+                                  ? 'bg-violet-950/40 text-violet-300 border border-violet-900/50'
+                                  : 'bg-emerald-950/40 text-emerald-300 border border-emerald-900/50'
+                              }`}>
+                                {t.payment_method}
+                              </span>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleViewDetails(t)}
+                                  className="p-1 text-indigo-400 font-semibold"
+                                >
+                                  Detail
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteTransaction(t.id)}
+                                  className="p-1 text-red-400 font-semibold"
+                                >
+                                  Hapus
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>

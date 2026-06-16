@@ -299,7 +299,8 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-auto rounded-lg border border-slate-800">
+          {/* Desktop Table View */}
+          <div className="hidden md:block flex-1 overflow-auto rounded-lg border border-slate-800">
              <table className="w-full text-left text-xs border-collapse">
               <thead className="bg-slate-900 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
                 <tr>
@@ -317,7 +318,7 @@ export default function DashboardPage() {
               <tbody className="divide-y divide-slate-800/60">
                 {filteredTransactions.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-12 text-slate-500">Belum ada transaksi hari ini.</td>
+                    <td colSpan={9} className="text-center py-12 text-slate-500">Belum ada transaksi hari ini.</td>
                   </tr>
                 ) : (
                   filteredTransactions.map((t) => (
@@ -389,6 +390,83 @@ export default function DashboardPage() {
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="flex-grow overflow-y-auto space-y-3 md:hidden">
+            {filteredTransactions.length === 0 ? (
+              <div className="text-center py-12 text-slate-500 text-xs">Belum ada transaksi hari ini.</div>
+            ) : (
+              filteredTransactions.map((t) => (
+                <div key={t.id} className="bg-slate-950/30 border border-slate-800/60 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-indigo-400 font-bold">
+                      {t.daily_queue_number ? `#${t.daily_queue_number}` : '-'}
+                    </span>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md font-semibold text-[9px] ${
+                      t.status === 'PAID'
+                        ? 'bg-green-950/30 text-green-400 border border-green-900/40'
+                        : t.status === 'FAILED'
+                        ? 'bg-red-950/30 text-red-400 border border-red-900/40'
+                        : 'bg-yellow-950/30 text-yellow-400 border border-yellow-900/40'
+                    }`}>
+                      {t.status}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-between items-start text-xs gap-4">
+                    <div className="min-w-0">
+                      <div className="font-bold text-slate-200 truncate">{t.trx_number || 'PENDING'}</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5 font-medium truncate">
+                        Kasir: {cashierMap[t.cashier_id || ''] || 'Sistem'}
+                      </div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">{toWIB(t.created_at)}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="font-bold text-slate-100">{formatMoney(Number(t.amount))}</div>
+                      {t.additions && (
+                        <div className="text-[9px] text-slate-500 mt-0.5 font-mono">
+                          +{t.additions.split('+').map(x => Number(x).toLocaleString('id-ID')).join(' + ')}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2.5 border-t border-slate-800/60 text-[10px]">
+                    <div className="flex gap-2">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${
+                        t.payment_method === 'QRIS'
+                          ? 'bg-violet-950/40 text-violet-300 border border-violet-900/50'
+                          : 'bg-emerald-950/40 text-emerald-300 border border-emerald-900/50'
+                      }`}>
+                        {t.payment_method}
+                      </span>
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${
+                        t.order_type === 'dine_in'
+                          ? 'bg-blue-950/40 text-blue-300 border border-blue-900/50'
+                          : 'bg-orange-950/40 text-orange-300 border border-orange-900/50'
+                      }`}>
+                        {t.order_type === 'dine_in' ? 'Dine In' : 'Takeaway'}
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleViewDetails(t)}
+                        className="p-1.5 text-indigo-400 hover:bg-indigo-500/10 rounded-md font-semibold"
+                      >
+                        Detail
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTransaction(t.id)}
+                        className="p-1.5 text-red-400 hover:bg-red-500/10 rounded-md font-semibold"
+                      >
+                        Hapus
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

@@ -199,53 +199,104 @@ export default function UsersPage() {
             <p className="text-sm">Belum ada akun terdaftar</p>
           </div>
         ) : (
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-900 text-slate-400 uppercase tracking-wider text-xs font-semibold border-b border-slate-800">
-              <tr>
-                <th className="px-6 py-4">Email</th>
-                <th className="px-6 py-4">Peran (Role)</th>
-                <th className="px-6 py-4">Dibuat</th>
-                <th className="px-6 py-4">Login Terakhir</th>
-                <th className="px-6 py-4 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60">
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-slate-900 text-slate-400 uppercase tracking-wider text-xs font-semibold border-b border-slate-800">
+                  <tr>
+                    <th className="px-6 py-4">Email</th>
+                    <th className="px-6 py-4">Peran (Role)</th>
+                    <th className="px-6 py-4">Dibuat</th>
+                    <th className="px-6 py-4">Login Terakhir</th>
+                    <th className="px-6 py-4 text-right">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {users.map((user) => (
+                    <tr key={user.id} className="hover:bg-slate-900/30 transition-colors duration-150">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-indigo-500/15 flex items-center justify-center">
+                            <Mail className="w-4 h-4 text-indigo-400" />
+                          </div>
+                          <span className="font-medium text-slate-200">{user.email}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {user.role === 'admin' ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                            Admin Dashboard
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            Kasir
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-slate-400 text-xs">{toWIB(user.created_at)}</td>
+                      <td className="px-6 py-4 text-slate-400 text-xs">{toWIB(user.last_sign_in_at)}</td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => setDeleteTarget(user)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-950/20 border border-transparent hover:border-red-900/30 transition-all duration-200"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Hapus
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="block sm:hidden divide-y divide-slate-800/60">
               {users.map((user) => (
-                <tr key={user.id} className="hover:bg-slate-900/30 transition-colors duration-150">
-                  <td className="px-6 py-4">
+                <div key={user.id} className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-indigo-500/15 flex items-center justify-center">
                         <Mail className="w-4 h-4 text-indigo-400" />
                       </div>
-                      <span className="font-medium text-slate-200">{user.email}</span>
+                      <span className="font-medium text-slate-200 text-xs truncate max-w-[160px]">{user.email}</span>
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
                     {user.role === 'admin' ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
-                        Admin Dashboard
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                        Admin
                       </span>
                     ) : (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                         Kasir
                       </span>
                     )}
-                  </td>
-                  <td className="px-6 py-4 text-slate-400 text-xs">{toWIB(user.created_at)}</td>
-                  <td className="px-6 py-4 text-slate-400 text-xs">{toWIB(user.last_sign_in_at)}</td>
-                  <td className="px-6 py-4 text-right">
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-400">
+                    <div>
+                      <span className="block text-slate-500">Dibuat:</span>
+                      <span>{toWIB(user.created_at)}</span>
+                    </div>
+                    <div>
+                      <span className="block text-slate-500">Login Terakhir:</span>
+                      <span>{toWIB(user.last_sign_in_at)}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-2 border-t border-slate-800/40">
                     <button
                       onClick={() => setDeleteTarget(user)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-950/20 border border-transparent hover:border-red-900/30 transition-all duration-200"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-red-400 hover:text-red-350 hover:bg-red-950/20 transition-all"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       Hapus
                     </button>
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
 
