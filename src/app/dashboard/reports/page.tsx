@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import ExcelJS from 'exceljs';
-import * as XLSX from 'xlsx';
 import {
   TrendingUp,
   DollarSign,
@@ -34,6 +33,7 @@ interface Transaction {
   created_at: string;
   additions?: string | null;
   cashier_id?: string | null;
+  order_type?: 'dine_in' | 'takeaway' | null;
 }
 
 interface TransactionItem {
@@ -669,7 +669,7 @@ export default function ReportsPage() {
           t.daily_queue_number ? `#${t.daily_queue_number}` : '-',
           cashierMap[t.cashier_id || ''] || 'Sistem / Tanpa Kasir',
           t.payment_method,
-          (t as any).order_type === 'dine_in' ? 'Dine In' : 'Takeaway',
+          t.order_type === 'dine_in' ? 'Dine In' : 'Takeaway',
           Number(t.amount),
           t.status,
           toWIB(t.created_at),
