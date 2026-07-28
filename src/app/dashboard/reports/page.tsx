@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import ExcelJS from 'exceljs';
 import * as XLSX from 'xlsx';
 import {
   TrendingUp,
@@ -18,6 +19,9 @@ import {
   Eye,
   X,
   Loader2,
+  Filter,
+  SlidersHorizontal,
+  ArrowRight,
 } from 'lucide-react';
 
 interface Transaction {
@@ -78,10 +82,11 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filterText, setFilterText] = useState('');
-  const [filterRange, setFilterRange] = useState<'today' | '7days' | '1month' | 'custom'>('7days');
+  const [filterRange, setFilterRange] = useState<'today' | '7days' | 'thisMonth' | '30days' | 'custom'>('7days');
   const [expandedDates, setExpandedDates] = useState<{ [key: string]: boolean }>({});
   const [cashierMap, setCashierMap] = useState<{[id: string]: string}>({});
   const [selectedCashierFilter, setSelectedCashierFilter] = useState<string>('all');
+  const [filterModalOpen, setFilterModalOpen] = useState<boolean>(false);
 
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [txItems, setTxItems] = useState<TransactionItem[]>([]);
@@ -125,46 +130,83 @@ export default function ReportsPage() {
 
   const [exporting, setExporting] = useState(false);
 
-  // Fetch transactions based on date filter
+  // Helper to compute start & end YYYY-MM-DD for a filter range
+  const getDateRangeStrings = useCallback((range: 'today' | '7days' | 'thisMonth' | '30days' | 'custom') => {
+    let startStr = todayStr;
+    let endStr = todayStr;
+
+    if (range === 'today') {
+      startStr = todayStr;
+      endStr = todayStr;
+    } else if (range === '7days') {
+      const d = new Date();
+      d.setDate(d.getDate() - 6);
+      startStr = getWIBDateString(d);
+      endStr = todayStr;
+    } else if (range === 'thisMonth') {
+      const parts = todayStr.split('-');
+      if (parts.length === 3) {
+        startStr = `${parts[0]}-${parts[1]}-01`;
+      } else {
+        startStr = todayStr;
+      }
+      endStr = todayStr;
+    } else if (range === '30days') {
+      const d = new Date();
+      d.setDate(d.getDate() - 29);
+      startStr = getWIBDateString(d);
+      endStr = todayStr;
+    } else {
+      startStr = customStart;
+      endStr = customEnd;
+    }
+
+    return { startStr, endStr };
+  }, [todayStr, customStart, customEnd]);
+
+  // Fetch transactions based on date filter with chunked bulk fetching (prevents 1,000 postgrest limit)
   const fetchReportData = useCallback(async () => {
     setLoading(true);
     try {
-      let startStr = todayStr;
-      let endStr = todayStr;
+      const { startStr, endStr } = getDateRangeStrings(filterRange);
 
-      if (filterRange === 'today') {
-        startStr = todayStr;
-        endStr = todayStr;
-      } else if (filterRange === '7days') {
-        const d = new Date();
-        d.setDate(d.getDate() - 6);
-        startStr = getWIBDateString(d);
-        endStr = todayStr;
-      } else if (filterRange === '1month') {
-        const d = new Date();
-        d.setDate(d.getDate() - 29);
-        startStr = getWIBDateString(d);
-        endStr = todayStr;
-      } else {
-        startStr = customStart;
-        endStr = customEnd;
+      let allData: Transaction[] = [];
+      let page = 0;
+      const pageSize = 1000;
+      let hasMore = true;
+
+      while (hasMore) {
+        const from = page * pageSize;
+        const to = from + pageSize - 1;
+
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('*')
+          .gte('created_at', `${startStr}T00:00:00+07:00`)
+          .lte('created_at', `${endStr}T23:59:59+07:00`)
+          .order('created_at', { ascending: false })
+          .range(from, to);
+
+        if (error) throw error;
+        if (data && data.length > 0) {
+          allData = allData.concat(data as Transaction[]);
+          if (data.length < pageSize) {
+            hasMore = false;
+          } else {
+            page++;
+          }
+        } else {
+          hasMore = false;
+        }
       }
 
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .gte('created_at', `${startStr}T00:00:00+07:00`)
-        .lte('created_at', `${endStr}T23:59:59+07:00`)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setTransactions((data as Transaction[]) || []);
+      setTransactions(allData);
     } catch (e) {
       console.error('Failed to load reports:', e);
     } finally {
       setLoading(false);
     }
-  }, [filterRange, customStart, customEnd, todayStr]);
+  }, [filterRange, getDateRangeStrings]);
 
   useEffect(() => {
     const fetchCashiers = async () => {
@@ -227,28 +269,17 @@ export default function ReportsPage() {
   const dailyData = (() => {
     const dailyMap: { [key: string]: { total: number; cash: number; qris: number } } = {};
 
-    // Get dates in range
-    let limit = 7;
-    if (filterRange === 'today') limit = 1;
-    else if (filterRange === '7days') limit = 7;
-    else if (filterRange === '1month') limit = 30;
-    else {
-      const start = new Date(customStart);
-      const end = new Date(customEnd);
-      limit = Math.max(1, Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1);
-    }
+    const { startStr, endStr } = getDateRangeStrings(filterRange);
+    const startDate = new Date(startStr + 'T00:00:00+07:00');
+    const endDate = new Date(endStr + 'T00:00:00+07:00');
+    const totalDays = Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
 
-    // Don't show more than 30 bars in chart to prevent cluttering
-    const chartLimit = Math.min(30, limit);
+    // Don't show more than 31 bars in chart to prevent cluttering
+    const chartLimit = Math.min(31, totalDays);
 
     for (let i = chartLimit - 1; i >= 0; i--) {
-      const d = new Date();
-      if (filterRange === 'custom') {
-        const end = new Date(customEnd);
-        d.setDate(end.getDate() - i);
-      } else {
-        d.setDate(d.getDate() - i);
-      }
+      const d = new Date(endDate.getTime());
+      d.setDate(d.getDate() - i);
       const dStr = getWIBDateString(d);
       dailyMap[dStr] = { total: 0, cash: 0, qris: 0 };
     }
@@ -262,7 +293,7 @@ export default function ReportsPage() {
           t.cashier_id === selectedCashierFilter;
 
         if (matchesCashier) {
-          const tDate = t.created_at.substring(0, 10); // YYYY-MM-DD
+          const tDate = getWIBDateString(new Date(t.created_at));
           if (dailyMap[tDate] !== undefined) {
             const amt = Number(t.amount);
             dailyMap[tDate].total += amt;
@@ -273,8 +304,7 @@ export default function ReportsPage() {
       }
     });
 
-    return Object.keys(dailyMap).map((date) => {
-      // Format label to DD/MM
+    return Object.keys(dailyMap).sort().map((date) => {
       const parts = date.split('-');
       const label = parts.length === 3 ? `${parts[2]}/${parts[1]}` : date;
       return {
@@ -351,184 +381,384 @@ export default function ReportsPage() {
         return;
       }
 
-      // Calculate start and end strings based on current filter range
-      let startStr = todayStr;
-      let endStr = todayStr;
+      const { startStr, endStr } = getDateRangeStrings(filterRange);
 
-      if (filterRange === 'today') {
-        startStr = todayStr;
-        endStr = todayStr;
-      } else if (filterRange === '7days') {
-        const d = new Date();
-        d.setDate(d.getDate() - 6);
-        startStr = getWIBDateString(d);
-        endStr = todayStr;
-      } else if (filterRange === '1month') {
-        const d = new Date();
-        d.setDate(d.getDate() - 29);
-        startStr = getWIBDateString(d);
-        endStr = todayStr;
-      } else {
-        startStr = customStart;
-        endStr = customEnd;
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'Seblak Sulthan POS System';
+      workbook.created = new Date();
+
+      // ==========================================
+      // SHEET 1: RINGKASAN LAPORAN OMSET & KPIS
+      // ==========================================
+      const sheet1 = workbook.addWorksheet('Ringkasan Omset Harian');
+      sheet1.views = [{ showGridLines: true }];
+
+      // Header Banner Title (Row 1-2)
+      sheet1.mergeCells('A1:F1');
+      const titleCell = sheet1.getCell('A1');
+      titleCell.value = 'LAPORAN KEUANGAN & PENJUALAN - SEBLAK SULTHAN';
+      titleCell.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FFFFFF' } };
+      titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '4F46E5' } }; // Indigo 600
+      titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+      const rangeLabel = filterRange === 'today' ? 'Hari Ini' 
+        : filterRange === '7days' ? '7 Hari Terakhir'
+        : filterRange === 'thisMonth' ? 'Bulan Ini (Kalender)'
+        : filterRange === '30days' ? '30 Hari Terakhir'
+        : `Kustom (${startStr} s.d. ${endStr})`;
+
+      sheet1.mergeCells('A2:F2');
+      const subTitleCell = sheet1.getCell('A2');
+      subTitleCell.value = `Periode: ${rangeLabel} | Tanggal Ekspor: ${toWIB(new Date().toISOString())}`;
+      subTitleCell.font = { name: 'Arial', size: 10, italic: true, color: { argb: '3730A3' } };
+      subTitleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E0E7FF' } }; // Indigo 100
+      subTitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+      sheet1.getRow(1).height = 30;
+      sheet1.getRow(2).height = 20;
+      sheet1.getRow(3).height = 10; // Empty spacer
+
+      // Summary KPI Section (Row 4-5)
+      let totalPaidCount = 0;
+      let totalPaidCash = 0;
+      let totalPaidQris = 0;
+      let totalPaidAmount = 0;
+
+      filteredTransactions.forEach((t) => {
+        if (t.status === 'PAID') {
+          totalPaidCount++;
+          const amt = Number(t.amount);
+          totalPaidAmount += amt;
+          if (t.payment_method === 'CASH') totalPaidCash += amt;
+          if (t.payment_method === 'QRIS') totalPaidQris += amt;
+        }
+      });
+
+      // KPI Card Headers (Row 4)
+      const kpiRow1 = sheet1.getRow(4);
+      kpiRow1.values = ['Total Omset', '', 'Total Transaksi', '', 'Omset Tunai (CASH)', 'Omset Digital (QRIS)'];
+      kpiRow1.height = 18;
+
+      sheet1.mergeCells('A4:B4');
+      sheet1.mergeCells('C4:D4');
+
+      ['A4', 'C4', 'E4', 'F4'].forEach((cellRef) => {
+        const cell = sheet1.getCell(cellRef);
+        cell.font = { name: 'Arial', size: 9, bold: true, color: { argb: '475569' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F1F5F9' } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      });
+
+      // KPI Card Values (Row 5)
+      const kpiRow2 = sheet1.getRow(5);
+      kpiRow2.values = [totalPaidAmount, '', totalPaidCount, '', totalPaidCash, totalPaidQris];
+      kpiRow2.height = 24;
+
+      sheet1.mergeCells('A5:B5');
+      sheet1.mergeCells('C5:D5');
+
+      const setKpiValueStyle = (cellRef: string, numFormat?: string, fontColor = '0F172A') => {
+        const cell = sheet1.getCell(cellRef);
+        cell.font = { name: 'Arial', size: 12, bold: true, color: { argb: fontColor } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F8FAFC' } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        if (numFormat) cell.numFmt = numFormat;
+      };
+
+      setKpiValueStyle('A5', '"Rp "#,##0', '4F46E5');
+      setKpiValueStyle('C5', '#,##0', 'D97706');
+      setKpiValueStyle('E5', '"Rp "#,##0', '059669');
+      setKpiValueStyle('F5', '"Rp "#,##0', '7C3AED');
+
+      sheet1.getRow(6).height = 12; // Empty spacer
+
+      // Table Header (Row 7)
+      const headers1 = ['No', 'Tanggal', 'Transaksi Sukses', 'Omset Tunai (IDR)', 'Omset QRIS (IDR)', 'Total Omset (IDR)'];
+      const headerRow1 = sheet1.getRow(7);
+      headerRow1.values = headers1;
+      headerRow1.height = 25;
+
+      headerRow1.eachCell((cell: ExcelJS.Cell) => {
+        cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '1E293B' } }; // Slate 800
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin', color: { argb: '334155' } },
+          left: { style: 'thin', color: { argb: '334155' } },
+          bottom: { style: 'medium', color: { argb: '0F172A' } },
+          right: { style: 'thin', color: { argb: '334155' } },
+        };
+      });
+
+      // Build daily data list
+      const datesList: string[] = [];
+      const current = new Date(startStr + 'T00:00:00+07:00');
+      const endDateObj = new Date(endStr + 'T00:00:00+07:00');
+      while (current <= endDateObj) {
+        datesList.push(getWIBDateString(current));
+        current.setDate(current.getDate() + 1);
       }
 
-      const isMultiDay = startStr !== endStr;
+      const dailyMap: {
+        [key: string]: {
+          trxCount: number;
+          cashAmount: number;
+          qrisAmount: number;
+          totalAmount: number;
+        };
+      } = {};
+      datesList.forEach((d) => {
+        dailyMap[d] = { trxCount: 0, cashAmount: 0, qrisAmount: 0, totalAmount: 0 };
+      });
 
-      if (isMultiDay) {
-        // Group by Day (Daily Omset)
-        const datesList: string[] = [];
-        const current = new Date(startStr + 'T00:00:00+07:00');
-        const end = new Date(endStr + 'T00:00:00+07:00');
-        while (current <= end) {
-          datesList.push(getWIBDateString(current));
-          current.setDate(current.getDate() + 1);
-        }
-
-        // Initialize daily map
-        const dailyMap: {
-          [key: string]: {
-            trxCount: number;
-            cashAmount: number;
-            qrisAmount: number;
-            totalAmount: number;
-          };
-        } = {};
-        datesList.forEach((d) => {
-          dailyMap[d] = { trxCount: 0, cashAmount: 0, qrisAmount: 0, totalAmount: 0 };
-        });
-
-        // Aggregate PAID transactions
-        filteredTransactions.forEach((t) => {
-          if (t.status === 'PAID') {
-            const tDate = t.created_at.substring(0, 10); // YYYY-MM-DD
-            if (dailyMap[tDate]) {
-              const amt = Number(t.amount);
-              dailyMap[tDate].trxCount += 1;
-              dailyMap[tDate].totalAmount += amt;
-              if (t.payment_method === 'CASH') {
-                dailyMap[tDate].cashAmount += amt;
-              } else if (t.payment_method === 'QRIS') {
-                dailyMap[tDate].qrisAmount += amt;
-              }
-            }
+      filteredTransactions.forEach((t) => {
+        if (t.status === 'PAID') {
+          const tDate = getWIBDateString(new Date(t.created_at));
+          if (dailyMap[tDate]) {
+            const amt = Number(t.amount);
+            dailyMap[tDate].trxCount += 1;
+            dailyMap[tDate].totalAmount += amt;
+            if (t.payment_method === 'CASH') dailyMap[tDate].cashAmount += amt;
+            if (t.payment_method === 'QRIS') dailyMap[tDate].qrisAmount += amt;
           }
+        }
+      });
+
+      let currentRowIdx = 8;
+      let rowCounter = 1;
+
+      datesList.forEach((date) => {
+        const stats = dailyMap[date];
+        const parts = date.split('-');
+        const formattedDate = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : date;
+
+        const dataRow = sheet1.getRow(currentRowIdx);
+        dataRow.values = [
+          rowCounter++,
+          formattedDate,
+          stats.trxCount,
+          stats.cashAmount,
+          stats.qrisAmount,
+          stats.totalAmount,
+        ];
+        dataRow.height = 20;
+
+        const isEven = rowCounter % 2 === 0;
+        const bgPattern = isEven ? 'F8FAFC' : 'FFFFFF';
+
+        dataRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+        dataRow.getCell(2).alignment = { horizontal: 'center', vertical: 'middle' };
+        dataRow.getCell(3).alignment = { horizontal: 'right', vertical: 'middle' };
+        dataRow.getCell(3).numFmt = '#,##0';
+
+        [4, 5, 6].forEach((colIdx) => {
+          const c = dataRow.getCell(colIdx);
+          c.alignment = { horizontal: 'right', vertical: 'middle' };
+          c.numFmt = '"Rp "#,##0';
         });
 
-        let index = 1;
-        interface DailyReportRow {
-          'No': string | number;
-          'Tanggal': string;
-          'Transaksi Sukses': number;
-          'Omset Tunai (IDR)': number;
-          'Omset QRIS (IDR)': number;
-          'Total Omset (IDR)': number;
-        }
-
-        const reportRows: DailyReportRow[] = datesList.map((date) => {
-          const stats = dailyMap[date];
-          const parts = date.split('-');
-          const formattedDate = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : date;
-          return {
-            'No': index++,
-            'Tanggal': formattedDate,
-            'Transaksi Sukses': stats.trxCount,
-            'Omset Tunai (IDR)': stats.cashAmount,
-            'Omset QRIS (IDR)': stats.qrisAmount,
-            'Total Omset (IDR)': stats.totalAmount,
+        for (let col = 1; col <= 6; col++) {
+          const cell = dataRow.getCell(col);
+          cell.font = { name: 'Arial', size: 9.5 };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgPattern } };
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'E2E8F0' } },
+            left: { style: 'thin', color: { argb: 'E2E8F0' } },
+            bottom: { style: 'thin', color: { argb: 'E2E8F0' } },
+            right: { style: 'thin', color: { argb: 'E2E8F0' } },
           };
-        });
-
-        // Add total summary row
-        const totalTrx = reportRows.reduce((sum, r) => sum + r['Transaksi Sukses'], 0);
-        const totalCash = reportRows.reduce((sum, r) => sum + r['Omset Tunai (IDR)'], 0);
-        const totalQris = reportRows.reduce((sum, r) => sum + r['Omset QRIS (IDR)'], 0);
-        const totalOverall = reportRows.reduce((sum, r) => sum + r['Total Omset (IDR)'], 0);
-
-        reportRows.push({
-          'No': 'Total',
-          'Tanggal': '',
-          'Transaksi Sukses': totalTrx,
-          'Omset Tunai (IDR)': totalCash,
-          'Omset QRIS (IDR)': totalQris,
-          'Total Omset (IDR)': totalOverall,
-        });
-
-        const worksheet = XLSX.utils.json_to_sheet(reportRows);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Ringkasan Omset Harian');
-
-        // Autofit columns
-        worksheet['!cols'] = [
-          { wch: 8 },  // No
-          { wch: 15 }, // Tanggal
-          { wch: 18 }, // Transaksi Sukses
-          { wch: 20 }, // Omset Tunai (IDR)
-          { wch: 20 }, // Omset QRIS (IDR)
-          { wch: 20 }, // Total Omset (IDR)
-        ];
-
-        const rangeLabel = filterRange === 'custom' ? `${customStart}_to_${customEnd}` : filterRange;
-        XLSX.writeFile(workbook, `SeblakSS_POS_Laporan_Harian_${rangeLabel}.xlsx`);
-      } else {
-        // Single Day: Export details per transaction
-        interface SingleDayReportRow {
-          'No': string | number;
-          'No Trx': string;
-          'No Antrian': string | number;
-          'Kasir': string;
-          'Jumlah (IDR)': number;
-          'Metode': string;
-          'Status': string;
-          'Waktu (WIB)': string;
         }
 
-        const reportRows: SingleDayReportRow[] = filteredTransactions.map((t, index) => ({
-          'No': index + 1,
-          'No Trx': t.trx_number || 'N/A',
-          'No Antrian': t.daily_queue_number || '-',
-          'Kasir': cashierMap[t.cashier_id || ''] || 'Sistem / Tanpa Kasir',
-          'Jumlah (IDR)': Number(t.amount),
-          'Metode': t.payment_method,
-          'Status': t.status,
-          'Waktu (WIB)': toWIB(t.created_at),
-        }));
+        currentRowIdx++;
+      });
 
-        // Calculate total PAID omset
-        const totalPaidOmset = filteredTransactions
-          .filter(t => t.status === 'PAID')
-          .reduce((sum, t) => sum + Number(t.amount), 0);
+      // Total Row at bottom
+      const totalRow = sheet1.getRow(currentRowIdx);
+      totalRow.values = [
+        'Total',
+        '',
+        totalPaidCount,
+        totalPaidCash,
+        totalPaidQris,
+        totalPaidAmount,
+      ];
+      totalRow.height = 24;
+      sheet1.mergeCells(`A${currentRowIdx}:B${currentRowIdx}`);
 
-        reportRows.push({
-          'No': 'Total PAID',
-          'No Trx': '',
-          'No Antrian': '',
-          'Kasir': '',
-          'Jumlah (IDR)': totalPaidOmset,
-          'Metode': '',
-          'Status': '',
-          'Waktu (WIB)': '',
-        });
+      totalRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+      totalRow.getCell(3).alignment = { horizontal: 'right', vertical: 'middle' };
+      totalRow.getCell(3).numFmt = '#,##0';
 
-        const worksheet = XLSX.utils.json_to_sheet(reportRows);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Detail Transaksi Harian');
+      [4, 5, 6].forEach((colIdx) => {
+        const c = totalRow.getCell(colIdx);
+        c.alignment = { horizontal: 'right', vertical: 'middle' };
+        c.numFmt = '"Rp "#,##0';
+      });
 
-        // Autofit columns
-        worksheet['!cols'] = [
-          { wch: 12 }, // No
-          { wch: 22 }, // No Trx
-          { wch: 10 }, // No Antrian
-          { wch: 25 }, // Kasir
-          { wch: 16 }, // Jumlah (IDR)
-          { wch: 10 }, // Metode
-          { wch: 10 }, // Status
-          { wch: 22 }, // Waktu (WIB)
-        ];
-
-        const rangeLabel = filterRange === 'custom' ? `${customStart}_to_${customEnd}` : filterRange;
-        XLSX.writeFile(workbook, `SeblakSS_POS_Detail_Transaksi_${rangeLabel}.xlsx`);
+      for (let col = 1; col <= 6; col++) {
+        const cell = totalRow.getCell(col);
+        cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: '1E1B4B' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'EEF2FF' } }; // Soft Indigo
+        cell.border = {
+          top: { style: 'medium', color: { argb: '4F46E5' } },
+          bottom: { style: 'double', color: { argb: '4F46E5' } },
+          left: { style: 'thin', color: { argb: 'C7D2FE' } },
+          right: { style: 'thin', color: { argb: 'C7D2FE' } },
+        };
       }
+
+      // Column widths for Sheet 1
+      sheet1.columns = [
+        { width: 8 },  // No
+        { width: 16 }, // Tanggal
+        { width: 20 }, // Transaksi Sukses
+        { width: 22 }, // Omset Tunai (IDR)
+        { width: 22 }, // Omset QRIS (IDR)
+        { width: 24 }, // Total Omset (IDR)
+      ];
+
+      // ==========================================
+      // SHEET 2: DETAIL SELURUH TRANSAKSI
+      // ==========================================
+      const sheet2 = workbook.addWorksheet('Detail Seluruh Transaksi');
+      sheet2.views = [{ showGridLines: true }];
+
+      // Title Banner Sheet 2
+      sheet2.mergeCells('A1:I1');
+      const titleCell2 = sheet2.getCell('A1');
+      titleCell2.value = 'RINCIAN DETAIL TRANSAKSI PENJUALAN';
+      titleCell2.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FFFFFF' } };
+      titleCell2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '1E293B' } };
+      titleCell2.alignment = { horizontal: 'center', vertical: 'middle' };
+      sheet2.getRow(1).height = 30;
+
+      sheet2.mergeCells('A2:I2');
+      const subTitleCell2 = sheet2.getCell('A2');
+      subTitleCell2.value = `Periode: ${rangeLabel} | Total Data: ${filteredTransactions.length} Transaksi`;
+      subTitleCell2.font = { name: 'Arial', size: 10, italic: true, color: { argb: '475569' } };
+      subTitleCell2.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F1F5F9' } };
+      subTitleCell2.alignment = { horizontal: 'center', vertical: 'middle' };
+      sheet2.getRow(2).height = 20;
+
+      sheet2.getRow(3).height = 10;
+
+      // Header Row (Row 4)
+      const headers2 = ['No', 'No. Trx', 'No. Antrian', 'Kasir', 'Metode', 'Tipe', 'Jumlah (IDR)', 'Status', 'Waktu (WIB)'];
+      const headerRow2 = sheet2.getRow(4);
+      headerRow2.values = headers2;
+      headerRow2.height = 24;
+
+      headerRow2.eachCell((cell: ExcelJS.Cell) => {
+        cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFF' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '334155' } };
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        cell.border = {
+          top: { style: 'thin', color: { argb: '475569' } },
+          left: { style: 'thin', color: { argb: '475569' } },
+          bottom: { style: 'medium', color: { argb: '0F172A' } },
+          right: { style: 'thin', color: { argb: '475569' } },
+        };
+      });
+
+      let txRowIdx = 5;
+      filteredTransactions.forEach((t, index) => {
+        const row = sheet2.getRow(txRowIdx);
+        row.values = [
+          index + 1,
+          t.trx_number || 'PENDING',
+          t.daily_queue_number ? `#${t.daily_queue_number}` : '-',
+          cashierMap[t.cashier_id || ''] || 'Sistem / Tanpa Kasir',
+          t.payment_method,
+          (t as any).order_type === 'dine_in' ? 'Dine In' : 'Takeaway',
+          Number(t.amount),
+          t.status,
+          toWIB(t.created_at),
+        ];
+        row.height = 19;
+
+        const isEven = index % 2 === 0;
+        const bgPattern = isEven ? 'F8FAFC' : 'FFFFFF';
+
+        row.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+        row.getCell(2).alignment = { horizontal: 'left', vertical: 'middle' };
+        row.getCell(3).alignment = { horizontal: 'center', vertical: 'middle' };
+        row.getCell(4).alignment = { horizontal: 'left', vertical: 'middle' };
+        row.getCell(5).alignment = { horizontal: 'center', vertical: 'middle' };
+        row.getCell(6).alignment = { horizontal: 'center', vertical: 'middle' };
+        row.getCell(7).alignment = { horizontal: 'right', vertical: 'middle' };
+        row.getCell(7).numFmt = '"Rp "#,##0';
+        row.getCell(8).alignment = { horizontal: 'center', vertical: 'middle' };
+        row.getCell(9).alignment = { horizontal: 'center', vertical: 'middle' };
+
+        for (let col = 1; col <= 9; col++) {
+          const cell = row.getCell(col);
+          cell.font = { name: 'Arial', size: 9 };
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgPattern } };
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'E2E8F0' } },
+            left: { style: 'thin', color: { argb: 'E2E8F0' } },
+            bottom: { style: 'thin', color: { argb: 'E2E8F0' } },
+            right: { style: 'thin', color: { argb: 'E2E8F0' } },
+          };
+        }
+
+        txRowIdx++;
+      });
+
+      // Total Row for Sheet 2
+      const totalRow2 = sheet2.getRow(txRowIdx);
+      totalRow2.values = [
+        'Total PAID',
+        '',
+        '',
+        '',
+        '',
+        '',
+        totalPaidAmount,
+        `${totalPaidCount} Transaksi`,
+        '',
+      ];
+      totalRow2.height = 24;
+      sheet2.mergeCells(`A${txRowIdx}:F${txRowIdx}`);
+
+      totalRow2.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+      totalRow2.getCell(7).alignment = { horizontal: 'right', vertical: 'middle' };
+      totalRow2.getCell(7).numFmt = '"Rp "#,##0';
+      totalRow2.getCell(8).alignment = { horizontal: 'center', vertical: 'middle' };
+
+      for (let col = 1; col <= 9; col++) {
+        const cell = totalRow2.getCell(col);
+        cell.font = { name: 'Arial', size: 9.5, bold: true, color: { argb: '0F172A' } };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F1F5F9' } };
+        cell.border = {
+          top: { style: 'medium', color: { argb: '475569' } },
+          bottom: { style: 'double', color: { argb: '475569' } },
+          left: { style: 'thin', color: { argb: 'CBD5E1' } },
+          right: { style: 'thin', color: { argb: 'CBD5E1' } },
+        };
+      }
+
+      sheet2.columns = [
+        { width: 8 },  // No
+        { width: 22 }, // No. Trx
+        { width: 12 }, // No. Antrian
+        { width: 25 }, // Kasir
+        { width: 12 }, // Metode
+        { width: 14 }, // Tipe
+        { width: 18 }, // Jumlah (IDR)
+        { width: 14 }, // Status
+        { width: 22 }, // Waktu (WIB)
+      ];
+
+      // Trigger Browser Download
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `SeblakSS_POS_Laporan_${rangeLabel.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`;
+      anchor.click();
+      window.URL.revokeObjectURL(url);
     } catch (e) {
       alert(`Export gagal: ${e instanceof Error ? e.message : 'Unknown error'}`);
     } finally {
@@ -537,23 +767,32 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-3 sm:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6">
       {/* Page Header & Filters */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-            <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400">
-              <TrendingUp className="w-5 h-5" />
+          <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2.5">
+            <div className="p-2 sm:p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400">
+              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             Laporan Keuangan
           </h2>
-          <p className="text-sm text-slate-400 mt-1">Pantau performa omset dan riwayat penjualan</p>
+          <p className="text-xs sm:text-sm text-slate-400 mt-0.5">Pantau performa omset dan riwayat penjualan</p>
         </div>
 
         {/* Filter Buttons & Export */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Dropdown filter cashier */}
-          <div className="relative">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          {/* Mobile Filter Button Trigger */}
+          <button
+            onClick={() => setFilterModalOpen(true)}
+            className="md:hidden flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-indigo-400 hover:bg-slate-800 transition-colors"
+          >
+            <Filter className="w-3.5 h-3.5" />
+            <span>Filter & Tanggal</span>
+          </button>
+
+          {/* Desktop Dropdown filter cashier */}
+          <div className="hidden md:block relative">
             <select
               value={selectedCashierFilter}
               onChange={(e) => setSelectedCashierFilter(e.target.value)}
@@ -573,7 +812,8 @@ export default function ReportsPage() {
             </select>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-1 flex gap-1 text-xs">
+          {/* Desktop Filter Pills */}
+          <div className="hidden md:flex bg-slate-900 border border-slate-800 rounded-xl p-1 gap-1 text-xs">
             <button
               onClick={() => setFilterRange('today')}
               className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
@@ -591,12 +831,20 @@ export default function ReportsPage() {
               7 Hari
             </button>
             <button
-              onClick={() => setFilterRange('1month')}
+              onClick={() => setFilterRange('thisMonth')}
               className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                filterRange === '1month' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+                filterRange === 'thisMonth' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              1 Bulan
+              Bulan Ini
+            </button>
+            <button
+              onClick={() => setFilterRange('30days')}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+                filterRange === '30days' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              30 Hari
             </button>
             <button
               onClick={() => setFilterRange('custom')}
@@ -611,17 +859,18 @@ export default function ReportsPage() {
           <button
             onClick={handleExcelExport}
             disabled={loading || exporting}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 transition-all duration-200 shadow-lg shadow-indigo-600/20"
+            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 transition-all duration-200 shadow-lg shadow-indigo-600/20"
           >
             {exporting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            Ekspor Excel
+            <span className="hidden sm:inline">Ekspor Excel</span>
+            <span className="sm:hidden">Excel</span>
           </button>
         </div>
       </div>
 
-      {/* Custom Date Range Picker Form */}
+      {/* Desktop Custom Date Range Picker Form */}
       {filterRange === 'custom' && (
-        <div className="backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 flex flex-wrap gap-4 items-end animate-fadeIn">
+        <div className="hidden md:flex backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 flex-wrap gap-4 items-end animate-fadeIn">
           <div>
             <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Tanggal Mulai</label>
             <input
@@ -649,58 +898,184 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {/* STATS SUMMARY CARDS */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Omset */}
-        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 shadow-xl">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-indigo-500/10 to-transparent rounded-bl-full pointer-events-none" />
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Omset</span>
-            <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400"><TrendingUp className="w-4 h-4" /></div>
+      {/* Mobile Bottom Sheet Modal for Filters */}
+      {filterModalOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fadeIn">
+          <div className="bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-2xl p-5 w-full max-w-md shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2 text-indigo-400 font-bold text-sm">
+                <SlidersHorizontal className="w-4 h-4" />
+                <span>Filter Laporan Keuangan</span>
+              </div>
+              <button
+                onClick={() => setFilterModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div>
+                <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                  Filter Akun Kasir
+                </label>
+                <select
+                  value={selectedCashierFilter}
+                  onChange={(e) => setSelectedCashierFilter(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-indigo-500 font-semibold"
+                >
+                  <option value="all">Semua Kasir</option>
+                  <option value="system">Sistem / Tanpa Kasir</option>
+                  {Object.entries(cashierMap).map(([id, email]) => (
+                    <option key={id} value={id}>{email}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                  Rentang Waktu
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setFilterRange('today')}
+                    className={`py-2 px-3 rounded-xl font-semibold border transition-all text-center ${
+                      filterRange === 'today' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-950 border-slate-800 text-slate-400'
+                    }`}
+                  >
+                    Hari Ini
+                  </button>
+                  <button
+                    onClick={() => setFilterRange('7days')}
+                    className={`py-2 px-3 rounded-xl font-semibold border transition-all text-center ${
+                      filterRange === '7days' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-950 border-slate-800 text-slate-400'
+                    }`}
+                  >
+                    7 Hari Terakhir
+                  </button>
+                  <button
+                    onClick={() => setFilterRange('thisMonth')}
+                    className={`py-2 px-3 rounded-xl font-semibold border transition-all text-center ${
+                      filterRange === 'thisMonth' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-950 border-slate-800 text-slate-400'
+                    }`}
+                  >
+                    Bulan Ini (Kalender)
+                  </button>
+                  <button
+                    onClick={() => setFilterRange('30days')}
+                    className={`py-2 px-3 rounded-xl font-semibold border transition-all text-center ${
+                      filterRange === '30days' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-950 border-slate-800 text-slate-400'
+                    }`}
+                  >
+                    30 Hari Terakhir
+                  </button>
+                  <button
+                    onClick={() => setFilterRange('custom')}
+                    className={`col-span-2 py-2 px-3 rounded-xl font-semibold border transition-all text-center ${
+                      filterRange === 'custom' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-950 border-slate-800 text-slate-400'
+                    }`}
+                  >
+                    Kustom Tanggal
+                  </button>
+                </div>
+              </div>
+
+              {filterRange === 'custom' && (
+                <div className="space-y-3 pt-2 border-t border-slate-800/60">
+                  <div>
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Tanggal Mulai</label>
+                    <input
+                      type="date"
+                      value={customStart}
+                      onChange={(e) => setCustomStart(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Tanggal Akhir</label>
+                    <input
+                      type="date"
+                      value={customEnd}
+                      onChange={(e) => setCustomEnd(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={() => {
+                  fetchReportData();
+                  setFilterModalOpen(false);
+                }}
+                className="w-full py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/20 text-xs transition-all mt-2"
+              >
+                Terapkan Filter & Lihat Data
+              </button>
+            </div>
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-white">{formatMoney(stats.total)}</h2>
-          <p className="text-[10px] text-slate-500 mt-1">Pada rentang waktu terpilih</p>
+        </div>
+      )}
+
+      {/* STATS SUMMARY CARDS */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* Total Omset */}
+        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3.5 sm:p-5 shadow-xl">
+          <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-bl from-indigo-500/10 to-transparent rounded-bl-full pointer-events-none" />
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">Total Omset</span>
+            <div className="p-1.5 sm:p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400"><TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></div>
+          </div>
+          <h2 className="text-base sm:text-2xl font-extrabold tracking-tight text-white">{formatMoney(stats.total)}</h2>
+          <p className="text-[9px] sm:text-[10px] text-slate-500 mt-1">Pada rentang terpilih</p>
         </div>
 
         {/* Total Transaksi */}
-        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 shadow-xl">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-full pointer-events-none" />
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Transaksi</span>
-            <div className="p-2.5 bg-amber-500/10 rounded-xl text-amber-400"><UsersIcon className="w-4 h-4" /></div>
+        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3.5 sm:p-5 shadow-xl">
+          <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-full pointer-events-none" />
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">Total Transaksi</span>
+            <div className="p-1.5 sm:p-2.5 bg-amber-500/10 rounded-xl text-amber-400"><UsersIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></div>
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-white">{stats.count}</h2>
-          <p className="text-[10px] text-slate-500 mt-1">Transaksi sukses tercatat</p>
+          <h2 className="text-base sm:text-2xl font-extrabold tracking-tight text-white">{stats.count}</h2>
+          <p className="text-[9px] sm:text-[10px] text-slate-500 mt-1">Transaksi sukses</p>
         </div>
 
         {/* CASH */}
-        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 shadow-xl">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-bl-full pointer-events-none" />
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Omset Cash</span>
-            <div className="p-2.5 bg-emerald-500/10 rounded-xl text-emerald-400"><DollarSign className="w-4 h-4" /></div>
+        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3.5 sm:p-5 shadow-xl">
+          <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-bl-full pointer-events-none" />
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">Omset Cash</span>
+            <div className="p-1.5 sm:p-2.5 bg-emerald-500/10 rounded-xl text-emerald-400"><DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></div>
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-white">{formatMoney(stats.cash)}</h2>
-          <p className="text-[10px] text-slate-500 mt-1">Total pembayaran tunai</p>
+          <h2 className="text-base sm:text-2xl font-extrabold tracking-tight text-white">{formatMoney(stats.cash)}</h2>
+          <p className="text-[9px] sm:text-[10px] text-emerald-400 mt-1">Pembayaran tunai</p>
         </div>
 
         {/* QRIS */}
-        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 shadow-xl">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-bl-full pointer-events-none" />
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Omset QRIS</span>
-            <div className="p-2.5 bg-violet-500/10 rounded-xl text-violet-400"><QrCode className="w-4 h-4" /></div>
+        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3.5 sm:p-5 shadow-xl">
+          <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-bl-full pointer-events-none" />
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">Omset QRIS</span>
+            <div className="p-1.5 sm:p-2.5 bg-violet-500/10 rounded-xl text-violet-400"><QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></div>
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-white">{formatMoney(stats.qris)}</h2>
-          <p className="text-[10px] text-slate-500 mt-1">Total pembayaran digital</p>
+          <h2 className="text-base sm:text-2xl font-extrabold tracking-tight text-white">{formatMoney(stats.qris)}</h2>
+          <p className="text-[9px] sm:text-[10px] text-violet-400 mt-1">Pembayaran digital</p>
         </div>
       </section>
 
       {/* REVENUE TREND CHART (SVG) */}
-      <section className="backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-6">
-        <div>
-          <h3 className="text-lg font-bold text-slate-200">Tren Penjualan Harian</h3>
-          <p className="text-xs text-slate-400">Grafik omset harian dalam rentang waktu yang dipilih</p>
+      <section className="backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 className="text-base sm:text-lg font-bold text-slate-200">Tren Penjualan Harian</h3>
+            <p className="text-[11px] sm:text-xs text-slate-400">Grafik omset harian dalam rentang waktu terpilih</p>
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px] text-indigo-400 font-medium md:hidden">
+            <span>Geser grafik ke kanan</span>
+            <ArrowRight className="w-3 h-3 animate-pulse" />
+          </div>
         </div>
 
         {loading ? (

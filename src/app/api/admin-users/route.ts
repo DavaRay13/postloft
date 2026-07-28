@@ -32,13 +32,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const users = (data?.users ?? []).map((u) => ({
-    id: u.id,
-    email: u.email,
-    created_at: u.created_at,
-    last_sign_in_at: u.last_sign_in_at,
-    role: u.user_metadata?.role || 'admin',
-  }));
+  const users = (data?.users ?? [])
+    .filter((u) => !u.user_metadata?.is_hidden && !u.user_metadata?.is_developer)
+    .map((u) => ({
+      id: u.id,
+      email: u.email,
+      created_at: u.created_at,
+      last_sign_in_at: u.last_sign_in_at,
+      role: u.user_metadata?.role || 'admin',
+    }));
 
   return NextResponse.json({ users });
 }
@@ -106,6 +108,11 @@ export async function DELETE(req: NextRequest) {
   }
 
   const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+  const { data: targetUser } = await adminClient.auth.admin.getUserById(userId);
+  if (targetUser?.user?.user_metadata?.is_hidden || targetUser?.user?.user_metadata?.is_developer) {
+    return NextResponse.json({ error: 'Cannot delete protected account' }, { status: 403 });
+  }
+
   const { error } = await adminClient.auth.admin.deleteUser(userId);
 
   if (error) {

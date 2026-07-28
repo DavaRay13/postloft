@@ -224,52 +224,54 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-3 sm:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6">
       {/* STATS CARDS */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Total Revenue */}
-        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 shadow-xl">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-indigo-500/10 to-transparent rounded-bl-full pointer-events-none" />
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Omset Hari Ini</span>
-            <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400"><TrendingUp className="w-4 h-4" /></div>
+        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3.5 sm:p-5 shadow-xl">
+          <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-bl from-indigo-500/10 to-transparent rounded-bl-full pointer-events-none" />
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">Omset Hari Ini</span>
+            <div className="p-1.5 sm:p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400"><TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></div>
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-white">{formatMoney(todayStats.total)}</h2>
-          <p className="text-[10px] text-indigo-400 mt-1 flex items-center gap-1 font-medium"><span>●</span> Realtime</p>
+          <h2 className="text-base sm:text-2xl font-extrabold tracking-tight text-white">{formatMoney(todayStats.total)}</h2>
+          <p className="text-[9px] sm:text-[10px] text-indigo-400 mt-1 flex items-center gap-1 font-medium"><span>●</span> Realtime</p>
         </div>
 
         {/* Customer count */}
-        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 shadow-xl">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-full pointer-events-none" />
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Pelanggan Hari Ini</span>
-            <div className="p-2.5 bg-amber-500/10 rounded-xl text-amber-400"><UsersIcon className="w-4 h-4" /></div>
+        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3.5 sm:p-5 shadow-xl">
+          <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-full pointer-events-none" />
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">Pelanggan</span>
+            <div className="p-1.5 sm:p-2.5 bg-amber-500/10 rounded-xl text-amber-400"><UsersIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></div>
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-white">{todayStats.count}</h2>
-          <div className="flex gap-2 mt-1">
-            <p className="text-[10px] text-blue-400 flex items-center gap-1 font-medium"><span>●</span> Dine In: {todayStats.dineIn}</p>
-            <p className="text-[10px] text-orange-400 flex items-center gap-1 font-medium"><span>●</span> Takeaway: {todayStats.takeaway}</p>
+          <h2 className="text-base sm:text-2xl font-extrabold tracking-tight text-white">{todayStats.count}</h2>
+          <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1">
+            <p className="text-[9px] sm:text-[10px] text-blue-400 flex items-center gap-1 font-medium">Dine In: {todayStats.dineIn}</p>
+            <p className="text-[9px] sm:text-[10px] text-orange-400 flex items-center gap-1 font-medium">Takeaway: {todayStats.takeaway}</p>
           </div>
         </div>
 
         {/* Cash */}
-        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 shadow-xl">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-bl-full pointer-events-none" />
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Cash</span>
-            <div className="p-2.5 bg-emerald-500/10 rounded-xl text-emerald-400"><DollarSign className="w-4 h-4" /></div>
+        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3.5 sm:p-5 shadow-xl">
+          <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-bl-full pointer-events-none" />
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">Tunai (Cash)</span>
+            <div className="p-1.5 sm:p-2.5 bg-emerald-500/10 rounded-xl text-emerald-400"><DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></div>
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-white">{formatMoney(todayStats.cash)}</h2>
+          <h2 className="text-base sm:text-2xl font-extrabold tracking-tight text-white">{formatMoney(todayStats.cash)}</h2>
+          <p className="text-[9px] sm:text-[10px] text-emerald-400 mt-1 font-medium">{cashPercent}% dari total</p>
         </div>
 
         {/* QRIS */}
-        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-5 shadow-xl">
-          <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-bl-full pointer-events-none" />
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">QRIS</span>
-            <div className="p-2.5 bg-violet-500/10 rounded-xl text-violet-400"><QrCode className="w-4 h-4" /></div>
+        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3.5 sm:p-5 shadow-xl">
+          <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-bl-full pointer-events-none" />
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">QRIS (Digital)</span>
+            <div className="p-1.5 sm:p-2.5 bg-violet-500/10 rounded-xl text-violet-400"><QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></div>
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-white">{formatMoney(todayStats.qris)}</h2>
+          <h2 className="text-base sm:text-2xl font-extrabold tracking-tight text-white">{formatMoney(todayStats.qris)}</h2>
+          <p className="text-[9px] sm:text-[10px] text-violet-400 mt-1 font-medium">{qrisPercent}% dari total</p>
         </div>
       </section>
 

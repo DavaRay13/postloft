@@ -177,6 +177,8 @@ export default function SettingsPage() {
     }
   };
 
+  const [activeMobileTab, setActiveMobileTab] = useState<'form' | 'preview'>('form');
+
   // Generate receipt preview separator
   const getSeparator = (char: string) => (char || '=').repeat(32);
 
@@ -190,25 +192,45 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="p-3 sm:p-6 max-w-5xl mx-auto space-y-4 sm:space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-            <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400">
-              <Receipt className="w-5 h-5" />
+          <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2.5">
+            <div className="p-2 sm:p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400">
+              <Receipt className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             Pengaturan Struk
           </h2>
-          <p className="text-sm text-slate-400 mt-1">Konfigurasi desain struk thermal printer 58mm</p>
+          <p className="text-xs sm:text-sm text-slate-400 mt-0.5">Konfigurasi desain struk thermal printer 58mm</p>
         </div>
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 transition-all duration-200 shadow-lg shadow-indigo-600/20"
+          className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 transition-all duration-200 shadow-lg shadow-indigo-600/20 active:scale-95"
         >
           {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          {saving ? 'Menyimpan...' : 'Simpan'}
+          {saving ? 'Menyimpan...' : 'Simpan Pengaturan'}
+        </button>
+      </div>
+
+      {/* Mobile Tab Switcher */}
+      <div className="flex lg:hidden bg-slate-900 border border-slate-800 rounded-xl p-1 gap-1 text-xs">
+        <button
+          onClick={() => setActiveMobileTab('form')}
+          className={`flex-1 py-2 rounded-lg font-semibold transition-all ${
+            activeMobileTab === 'form' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          Form Pengaturan
+        </button>
+        <button
+          onClick={() => setActiveMobileTab('preview')}
+          className={`flex-1 py-2 rounded-lg font-semibold transition-all ${
+            activeMobileTab === 'preview' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          Preview Struk
         </button>
       </div>
 
@@ -230,7 +252,7 @@ export default function SettingsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Settings Form */}
-        <div className="backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-5">
+        <div className={`${activeMobileTab === 'form' ? 'block' : 'hidden lg:block'} backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4 sm:space-y-5`}>
           <h3 className="text-base font-bold text-slate-200 flex items-center gap-2 mb-2">
             <Store className="w-4 h-4 text-indigo-400" />
             Informasi Toko
@@ -365,7 +387,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Live Receipt Preview */}
-        <div className="backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 shadow-xl">
+        <div className={`${activeMobileTab === 'preview' ? 'block' : 'hidden lg:block'} backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 sm:p-6 shadow-xl`}>
           <h3 className="text-base font-bold text-slate-200 flex items-center gap-2 mb-4">
             <Receipt className="w-4 h-4 text-indigo-400" />
             Preview Struk

@@ -167,13 +167,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Page content */}
-        <main className="flex-1 z-10">
+        <main className="flex-1 z-10 pb-20 lg:pb-0">
           {children}
         </main>
 
-        <footer className="mt-auto border-t border-slate-800/50 py-4 text-center text-xs text-slate-500">
+        <footer className="mt-auto border-t border-slate-800/50 py-4 text-center text-xs text-slate-500 pb-20 lg:pb-4">
           &copy; {new Date().getFullYear()} SeblakSS POS Admin Dashboard. All rights reserved.
         </footer>
+
+        {/* Mobile Bottom Navigation Bar */}
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800/80 px-2 py-2 flex items-center justify-around shadow-2xl shadow-slate-950">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-medium transition-all duration-200 ${
+                  isActive
+                    ? 'text-indigo-400 font-bold bg-indigo-500/10'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <item.icon className={`w-5 h-5 ${isActive ? 'text-indigo-400 scale-110' : ''} transition-transform`} />
+                <span>{item.label === 'Laporan Keuangan' ? 'Laporan' : item.label === 'Pengaturan Struk' ? 'Struk' : item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
       </div>
     </div>
   );
