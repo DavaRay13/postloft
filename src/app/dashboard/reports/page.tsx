@@ -868,6 +868,81 @@ export default function ReportsPage() {
         </div>
       </div>
 
+      {/* Mobile Scrollable Quick Filter Bar & Active Badge */}
+      <div className="md:hidden space-y-2 pt-1">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+          <button
+            onClick={() => setFilterRange('today')}
+            className={`px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition-all border ${
+              filterRange === 'today'
+                ? 'bg-indigo-600 border-indigo-500 text-white shadow-md'
+                : 'bg-slate-900 border-slate-800 text-slate-400'
+            }`}
+          >
+            Hari Ini
+          </button>
+          <button
+            onClick={() => setFilterRange('7days')}
+            className={`px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition-all border ${
+              filterRange === '7days'
+                ? 'bg-indigo-600 border-indigo-500 text-white shadow-md'
+                : 'bg-slate-900 border-slate-800 text-slate-400'
+            }`}
+          >
+            7 Hari
+          </button>
+          <button
+            onClick={() => setFilterRange('thisMonth')}
+            className={`px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition-all border ${
+              filterRange === 'thisMonth'
+                ? 'bg-indigo-600 border-indigo-500 text-white shadow-md'
+                : 'bg-slate-900 border-slate-800 text-slate-400'
+            }`}
+          >
+            Bulan Ini
+          </button>
+          <button
+            onClick={() => setFilterRange('30days')}
+            className={`px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition-all border ${
+              filterRange === '30days'
+                ? 'bg-indigo-600 border-indigo-500 text-white shadow-md'
+                : 'bg-slate-900 border-slate-800 text-slate-400'
+            }`}
+          >
+            30 Hari
+          </button>
+          <button
+            onClick={() => setFilterRange('custom')}
+            className={`px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition-all border ${
+              filterRange === 'custom'
+                ? 'bg-indigo-600 border-indigo-500 text-white shadow-md'
+                : 'bg-slate-900 border-slate-800 text-slate-400'
+            }`}
+          >
+            Kustom
+          </button>
+          <button
+            onClick={() => setFilterModalOpen(true)}
+            className="px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap bg-slate-800 border border-slate-700 text-indigo-300 flex items-center gap-1 shrink-0"
+          >
+            <SlidersHorizontal className="w-3 h-3" />
+            <span>Filter Lengkap</span>
+          </button>
+        </div>
+
+        {/* Active Filter Status Badge */}
+        <div className="flex items-center justify-between bg-indigo-950/40 border border-indigo-900/40 rounded-xl px-3 py-1.5 text-[10px] text-indigo-300 font-medium">
+          <div className="flex items-center gap-1.5 truncate">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse shrink-0" />
+            <span className="truncate">
+              Filter: <strong className="text-white">
+                {filterRange === 'today' ? 'Hari Ini' : filterRange === '7days' ? '7 Hari' : filterRange === 'thisMonth' ? 'Bulan Ini' : filterRange === '30days' ? '30 Hari' : 'Kustom'}
+              </strong> • <strong className="text-white">{selectedCashierFilter === 'all' ? 'Semua Kasir' : cashierMap[selectedCashierFilter] || 'Tanpa Kasir'}</strong>
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* Desktop Custom Date Range Picker Form */}
       {filterRange === 'custom' && (
         <div className="hidden md:flex backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 flex-wrap gap-4 items-end animate-fadeIn">
@@ -1511,26 +1586,39 @@ export default function ReportsPage() {
                               </div>
                             </div>
 
-                            <div className="flex items-center justify-between pt-2 border-t border-slate-800/50 text-[10px]">
-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${
-                                t.payment_method === 'QRIS'
-                                  ? 'bg-violet-950/40 text-violet-300 border border-violet-900/50'
-                                  : 'bg-emerald-950/40 text-emerald-300 border border-emerald-900/50'
-                              }`}>
-                                {t.payment_method}
-                              </span>
-                              <div className="flex gap-2">
+                            <div className="flex items-center justify-between pt-2.5 border-t border-slate-800/60 text-xs">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                                  t.payment_method === 'QRIS'
+                                    ? 'bg-violet-950/60 text-violet-300 border border-violet-900/60'
+                                    : 'bg-emerald-950/60 text-emerald-300 border border-emerald-900/60'
+                                }`}>
+                                  {t.payment_method === 'QRIS' ? <QrCode className="w-3 h-3" /> : <DollarSign className="w-3 h-3" />}
+                                  {t.payment_method}
+                                </span>
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                                  t.order_type === 'dine_in'
+                                    ? 'bg-blue-950/60 text-blue-300 border border-blue-900/60'
+                                    : 'bg-orange-950/60 text-orange-300 border border-orange-900/60'
+                                }`}>
+                                  {t.order_type === 'dine_in' ? 'Dine In' : 'Takeaway'}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-2">
                                 <button
                                   onClick={() => handleViewDetails(t)}
-                                  className="p-1 text-indigo-400 font-semibold"
+                                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 hover:bg-indigo-500/20 font-bold text-xs active:scale-95 transition-all"
                                 >
-                                  Detail
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>Detail</span>
                                 </button>
                                 <button
                                   onClick={() => handleDeleteTransaction(t.id)}
-                                  className="p-1 text-red-400 font-semibold"
+                                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:text-red-300 hover:bg-red-500/20 font-bold text-xs active:scale-95 transition-all"
+                                  title="Hapus"
                                 >
-                                  Hapus
+                                  <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               </div>
                             </div>
