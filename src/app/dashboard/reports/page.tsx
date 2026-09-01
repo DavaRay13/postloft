@@ -30,6 +30,7 @@ interface Transaction {
   payment_method: 'CASH' | 'QRIS';
   status: 'PENDING' | 'PAID' | 'FAILED';
   daily_queue_number: number | null;
+  cashier_seq_number?: number | null;
   created_at: string;
   additions?: string | null;
   cashier_id?: string | null;
@@ -76,6 +77,39 @@ function formatFriendlyDate(dateStr: string) {
     month: 'long',
     year: 'numeric',
   });
+}
+
+function assignCashierSequenceNumbers(list: Transaction[]): Transaction[] {
+  const groups: { [key: string]: Transaction[] } = {};
+
+  list.forEach((tx) => {
+    const dateKey = getWIBDateString(new Date(tx.created_at));
+    const cashierKey = tx.cashier_id || 'system';
+    const groupKey = `${dateKey}_${cashierKey}`;
+    if (!groups[groupKey]) {
+      groups[groupKey] = [];
+    }
+    groups[groupKey].push(tx);
+  });
+
+  const assignedMap = new Map<string, number>();
+
+  Object.values(groups).forEach((groupTxs) => {
+    const sortedAsc = [...groupTxs].sort((a, b) => {
+      const timeDiff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      if (timeDiff !== 0) return timeDiff;
+      return (a.daily_queue_number || 0) - (b.daily_queue_number || 0);
+    });
+
+    sortedAsc.forEach((tx, index) => {
+      assignedMap.set(tx.id, index + 1);
+    });
+  });
+
+  return list.map((tx) => ({
+    ...tx,
+    cashier_seq_number: assignedMap.get(tx.id) || 1,
+  }));
 }
 
 export default function ReportsPage() {
@@ -179,12 +213,16 @@ export default function ReportsPage() {
         const from = page * pageSize;
         const to = from + pageSize - 1;
 
+        const startUtc = new Date(`${startStr}T00:00:00+07:00`).toISOString();
+        const endUtc = new Date(`${endStr}T23:59:59+07:00`).toISOString();
+
         const { data, error } = await supabase
           .from('transactions')
           .select('*')
-          .gte('created_at', `${startStr}T00:00:00+07:00`)
-          .lte('created_at', `${endStr}T23:59:59+07:00`)
+          .gte('created_at', startUtc)
+          .lte('created_at', endUtc)
           .order('created_at', { ascending: false })
+          .order('daily_queue_number', { ascending: false })
           .range(from, to);
 
         if (error) throw error;
@@ -200,7 +238,7 @@ export default function ReportsPage() {
         }
       }
 
-      setTransactions(allData);
+      setTransactions(assignCashierSequenceNumbers(allData));
     } catch (e) {
       console.error('Failed to load reports:', e);
     } finally {
@@ -666,7 +704,7 @@ export default function ReportsPage() {
         row.values = [
           index + 1,
           t.trx_number || 'PENDING',
-          t.daily_queue_number ? `#${t.daily_queue_number}` : '-',
+          t.cashier_seq_number ? `#${t.cashier_seq_number}` : (t.daily_queue_number ? `#${t.daily_queue_number}` : '-'),
           cashierMap[t.cashier_id || ''] || 'Sistem / Tanpa Kasir',
           t.payment_method,
           t.order_type === 'dine_in' ? 'Dine In' : 'Takeaway',
@@ -1487,7 +1525,7 @@ export default function ReportsPage() {
                             {group.transactions.map((t) => (
                                <tr key={t.id} className="hover:bg-slate-900/30 transition-colors duration-150">
                                 <td className="px-4 py-2.5 text-indigo-400 font-bold">
-                                  {t.daily_queue_number ? `#${t.daily_queue_number}` : '-'}
+                                  {t.cashier_seq_number ? `#${t.cashier_seq_number}` : (t.daily_queue_number ? `#${t.daily_queue_number}` : '-')}
                                 </td>
                                 <td className="px-4 py-2.5 font-bold text-slate-300">
                                   {t.trx_number || 'PENDING'}
@@ -1536,7 +1574,7 @@ export default function ReportsPage() {
                                     </button>
                                     <button
                                       onClick={() => handleDeleteTransaction(t.id)}
-                                      className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/5 rounded-lg transition-colors"
+                                      className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                                       title="Hapus Transaksi"
                                     >
                                       <Trash2 className="w-3.5 h-3.5" />
@@ -1555,7 +1593,7 @@ export default function ReportsPage() {
                           <div key={t.id} className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-3.5 space-y-3">
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-indigo-400 font-bold">
-                                {t.daily_queue_number ? `#${t.daily_queue_number}` : '-'}
+                                {t.cashier_seq_number ? `#${t.cashier_seq_number}` : (t.daily_queue_number ? `#${t.daily_queue_number}` : '-')}
                               </span>
                               <span className={`inline-flex items-center px-2 py-0.5 rounded-md font-semibold text-[9px] ${
                                 t.status === 'PAID'
@@ -1672,8 +1710,10 @@ export default function ReportsPage() {
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block">Nomor Antrean</span>
-                  <span className="text-indigo-400 font-bold">{selectedTx.daily_queue_number ? `#${selectedTx.daily_queue_number}` : '-'}</span>
+                  <span className="text-slate-500 block">No. Urut Kasir</span>
+                  <span className="text-indigo-400 font-bold">
+                    {selectedTx.cashier_seq_number ? `#${selectedTx.cashier_seq_number}` : (selectedTx.daily_queue_number ? `#${selectedTx.daily_queue_number}` : '-')}
+                  </span>
                 </div>
                 <div>
                   <span className="text-slate-500 block">Status</span>
