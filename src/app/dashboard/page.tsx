@@ -329,60 +329,60 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="p-3 sm:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6">
-      {/* STATS CARDS */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+    <div className="p-3 space-y-3 w-full">
+      {/* STATS CARDS (2x2 Mobile Grid) */}
+      <section className="grid grid-cols-2 gap-2">
         {/* Total Revenue */}
-        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3.5 sm:p-5 shadow-xl transition-transform duration-200 hover:border-slate-700">
-          <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-bl from-indigo-500/15 to-transparent rounded-bl-full pointer-events-none" />
-          <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">Omset Hari Ini</span>
-            <div className="p-1.5 sm:p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400"><TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></div>
+        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3 shadow-lg">
+          <div className="absolute top-0 right-0 w-14 h-14 bg-gradient-to-bl from-indigo-500/15 to-transparent rounded-bl-full pointer-events-none" />
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Omset Hari Ini</span>
+            <div className="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-400"><TrendingUp className="w-3.5 h-3.5" /></div>
           </div>
-          <h2 className="text-base sm:text-2xl font-extrabold tracking-tight text-white">{formatMoney(todayStats.total)}</h2>
-          <p className="text-[9px] sm:text-[10px] text-indigo-400 mt-1 flex items-center gap-1 font-medium"><span>●</span> Realtime</p>
+          <h2 className="text-base font-extrabold tracking-tight text-white truncate">{formatMoney(todayStats.total)}</h2>
+          <p className="text-[9px] text-indigo-400 mt-1 flex items-center gap-1 font-medium"><span>●</span> Realtime</p>
         </div>
 
         {/* Customer count */}
-        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3.5 sm:p-5 shadow-xl transition-transform duration-200 hover:border-slate-700">
-          <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-bl from-amber-500/15 to-transparent rounded-bl-full pointer-events-none" />
-          <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">Pelanggan</span>
-            <div className="p-1.5 sm:p-2.5 bg-amber-500/10 rounded-xl text-amber-400"><UsersIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></div>
+        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3 shadow-lg">
+          <div className="absolute top-0 right-0 w-14 h-14 bg-gradient-to-bl from-amber-500/15 to-transparent rounded-bl-full pointer-events-none" />
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Pelanggan</span>
+            <div className="p-1.5 bg-amber-500/10 rounded-lg text-amber-400"><UsersIcon className="w-3.5 h-3.5" /></div>
           </div>
-          <h2 className="text-base sm:text-2xl font-extrabold tracking-tight text-white">{todayStats.count}</h2>
+          <h2 className="text-base font-extrabold tracking-tight text-white">{todayStats.count}</h2>
           <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-1">
-            <p className="text-[9px] sm:text-[10px] text-blue-400 flex items-center gap-1 font-medium">Dine In: {todayStats.dineIn}</p>
-            <p className="text-[9px] sm:text-[10px] text-orange-400 flex items-center gap-1 font-medium">Takeaway: {todayStats.takeaway}</p>
+            <span className="text-[9px] text-blue-400 font-medium">Dine In: {todayStats.dineIn}</span>
+            <span className="text-[9px] text-orange-400 font-medium">Takeaway: {todayStats.takeaway}</span>
           </div>
         </div>
 
         {/* Cash */}
-        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3.5 sm:p-5 shadow-xl transition-transform duration-200 hover:border-slate-700">
-          <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-bl from-emerald-500/15 to-transparent rounded-bl-full pointer-events-none" />
-          <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">Tunai (Cash)</span>
-            <div className="p-1.5 sm:p-2.5 bg-emerald-500/10 rounded-xl text-emerald-400"><DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></div>
+        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3 shadow-lg">
+          <div className="absolute top-0 right-0 w-14 h-14 bg-gradient-to-bl from-emerald-500/15 to-transparent rounded-bl-full pointer-events-none" />
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Tunai (Cash)</span>
+            <div className="p-1.5 bg-emerald-500/10 rounded-lg text-emerald-400"><DollarSign className="w-3.5 h-3.5" /></div>
           </div>
-          <h2 className="text-base sm:text-2xl font-extrabold tracking-tight text-white">{formatMoney(todayStats.cash)}</h2>
-          <p className="text-[9px] sm:text-[10px] text-emerald-400 mt-1 font-medium">{cashPercent}% dari total</p>
+          <h2 className="text-base font-extrabold tracking-tight text-white truncate">{formatMoney(todayStats.cash)}</h2>
+          <p className="text-[9px] text-emerald-400 mt-1 font-medium">{cashPercent}% dari total</p>
         </div>
 
         {/* QRIS */}
-        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3.5 sm:p-5 shadow-xl transition-transform duration-200 hover:border-slate-700">
-          <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-bl from-violet-500/15 to-transparent rounded-bl-full pointer-events-none" />
-          <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">QRIS (Digital)</span>
-            <div className="p-1.5 sm:p-2.5 bg-violet-500/10 rounded-xl text-violet-400"><QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></div>
+        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3 shadow-lg">
+          <div className="absolute top-0 right-0 w-14 h-14 bg-gradient-to-bl from-violet-500/15 to-transparent rounded-bl-full pointer-events-none" />
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">QRIS</span>
+            <div className="p-1.5 bg-violet-500/10 rounded-lg text-violet-400"><QrCode className="w-3.5 h-3.5" /></div>
           </div>
-          <h2 className="text-base sm:text-2xl font-extrabold tracking-tight text-white">{formatMoney(todayStats.qris)}</h2>
-          <p className="text-[9px] sm:text-[10px] text-violet-400 mt-1 font-medium">{qrisPercent}% dari total</p>
+          <h2 className="text-base font-extrabold tracking-tight text-white truncate">{formatMoney(todayStats.qris)}</h2>
+          <p className="text-[9px] text-violet-400 mt-1 font-medium">{qrisPercent}% dari total</p>
         </div>
       </section>
 
-      {/* KLASIFIKASI KASIR - TAB & FILTER BAR (RESPONSIF MOBILE) */}
-      <section className="backdrop-blur-md bg-slate-900/50 border border-slate-800/80 rounded-2xl p-3 sm:p-4 shadow-lg space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* KLASIFIKASI KASIR - TAB & FILTER BAR (MOBILE ONLY) */}
+      <section className="backdrop-blur-md bg-slate-900/50 border border-slate-800/80 rounded-2xl p-3 shadow-lg space-y-2.5">
+        <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <div className="p-2 bg-indigo-500/10 text-indigo-400 rounded-xl">
               <UserCheck className="w-4 h-4" />
@@ -488,41 +488,41 @@ export default function DashboardPage() {
         )}
       </section>
 
-      {/* BOTTOM SECTION (TRANSAKSI & LAPORAN) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+      {/* BOTTOM SECTION (TRANSAKSI & LAPORAN - STACK MOBILE) */}
+      <div className="space-y-3">
         {/* Transactions Section */}
-        <div className="lg:col-span-2 backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 sm:p-6 shadow-xl flex flex-col min-h-[560px]">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 sm:mb-6">
+        <div className="backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-3.5 shadow-xl flex flex-col space-y-3">
+          <div className="space-y-2">
             <div>
-              <h3 className="text-base sm:text-lg font-bold text-slate-200 flex items-center gap-2">
-                <Receipt className="w-5 h-5 text-indigo-400" />
-                {viewMode === 'grouped' ? 'Transaksi Dikelompokkan Per Akun' : 'Transaksi Live Hari Ini'}
+              <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
+                <Receipt className="w-4 h-4 text-indigo-400" />
+                {viewMode === 'grouped' ? 'Transaksi Per Akun Kasir' : 'Daftar Transaksi Hari Ini'}
               </h3>
-              <p className="text-[11px] sm:text-xs text-slate-400">
+              <p className="text-[10px] text-slate-400">
                 {viewMode === 'grouped'
-                  ? 'Setiap kasir memiliki daftar urutan transaksinya masing-masing'
+                  ? 'Setiap kasir memiliki urutan transaksi masing-masing'
                   : 'Daftar urutan transaksi kronologis hari ini'}
               </p>
             </div>
-            <div className="relative max-w-xs w-full">
+            <div className="relative w-full">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 pointer-events-none">
-                <Search className="w-4 h-4" />
+                <Search className="w-3.5 h-3.5" />
               </span>
               <input
                 type="text"
                 placeholder="Cari no. trx, kasir, status..."
                 value={filterText}
                 onChange={(e) => setFilterText(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-xs"
+                className="w-full pl-8 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-xs"
               />
             </div>
           </div>
 
           {/* VIEW MODE: GROUPED PER AKUN KASIR */}
           {viewMode === 'grouped' ? (
-            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+            <div className="space-y-3">
               {cashierAccounts.filter((c) => selectedCashierFilter === 'all' || c.id === selectedCashierFilter).length === 0 ? (
-                <div className="text-center py-16 text-slate-500 text-xs">Tidak ada data akun kasir.</div>
+                <div className="text-center py-12 text-slate-500 text-xs">Tidak ada data akun kasir.</div>
               ) : (
                 cashierAccounts
                   .filter((c) => selectedCashierFilter === 'all' || c.id === selectedCashierFilter)
@@ -536,54 +536,47 @@ export default function DashboardPage() {
                     return (
                       <div
                         key={cashier.id}
-                        className="bg-slate-950/50 border border-slate-800/70 rounded-xl p-3.5 sm:p-4 space-y-3 shadow-md"
+                        className="bg-slate-950/50 border border-slate-800/70 rounded-xl p-3 space-y-2.5 shadow-sm"
                       >
                         {/* Header Kasir */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2.5 border-b border-slate-800/60 gap-2">
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
-                              <User className="w-4 h-4" />
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-800/60 gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+                              <User className="w-3.5 h-3.5" />
                             </div>
                             <div className="min-w-0">
-                              <h4 className="text-xs sm:text-sm font-bold text-slate-100 truncate">{cashier.name}</h4>
-                              <p className="text-[10px] text-slate-400">{cashier.count} Total Transaksi</p>
+                              <h4 className="text-xs font-bold text-slate-100 truncate">{cashier.name}</h4>
+                              <p className="text-[10px] text-slate-400">{cashier.count} Transaksi</p>
                             </div>
                           </div>
 
-                          {/* Quick sub-stats per kasir */}
-                          <div className="flex flex-wrap items-center gap-2 text-[10px]">
-                            <span className="px-2 py-1 rounded-md bg-emerald-950/40 text-emerald-300 border border-emerald-900/50 font-semibold">
-                              Total: {formatMoney(cashier.totalRevenue)}
-                            </span>
-                            <span className="px-2 py-1 rounded-md bg-blue-950/40 text-blue-300 border border-blue-900/50">
-                              Tunai: {formatMoney(cashier.cashRevenue)}
-                            </span>
-                            <span className="px-2 py-1 rounded-md bg-violet-950/40 text-violet-300 border border-violet-900/50">
-                              QRIS: {formatMoney(cashier.qrisRevenue)}
+                          <div className="text-right">
+                            <span className="px-2 py-0.5 rounded-md bg-emerald-950/40 text-emerald-300 border border-emerald-900/50 font-bold text-[10px]">
+                              {formatMoney(cashier.totalRevenue)}
                             </span>
                           </div>
                         </div>
 
                         {/* List transaksi khusus kasir ini */}
                         {txList.length === 0 ? (
-                          <div className="text-center py-6 text-slate-500 text-xs italic">
-                            Belum ada transaksi yang cocok untuk akun kasir ini.
+                          <div className="text-center py-4 text-slate-500 text-xs italic">
+                            Belum ada transaksi cocok.
                           </div>
                         ) : (
                           <div className="space-y-2">
                             {txList.map((t) => (
                               <div
                                 key={t.id}
-                                className="bg-slate-900/40 border border-slate-800/40 rounded-lg p-2.5 sm:p-3 flex items-center justify-between gap-3 text-xs hover:border-slate-700/60 transition-colors"
+                                className="bg-slate-900/40 border border-slate-800/50 rounded-lg p-2.5 flex items-center justify-between gap-2 text-xs"
                               >
-                                <div className="flex items-center gap-2.5 min-w-0">
-                                  <span className="text-indigo-400 font-bold shrink-0">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="text-indigo-400 font-extrabold text-xs shrink-0">
                                     {t.cashier_seq_number ? `#${t.cashier_seq_number}` : (t.daily_queue_number ? `#${t.daily_queue_number}` : '-')}
                                   </span>
                                   <div className="min-w-0">
-                                    <div className="font-semibold text-slate-200 truncate">{t.trx_number || 'PENDING'}</div>
-                                    <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1.5">
-                                      <Clock className="w-3 h-3 text-slate-500" />
+                                    <div className="font-semibold text-slate-200 text-xs truncate">{t.trx_number || 'PENDING'}</div>
+                                    <div className="text-[9px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                      <Clock className="w-2.5 h-2.5 text-slate-500" />
                                       <span>{toWIB(t.created_at)}</span>
                                       <span>•</span>
                                       <span>{t.order_type === 'dine_in' ? 'Dine In' : 'Takeaway'}</span>
@@ -591,13 +584,11 @@ export default function DashboardPage() {
                                   </div>
                                 </div>
 
-                                <div className="flex items-center gap-3 shrink-0">
+                                <div className="flex items-center gap-2 shrink-0">
                                   <div className="text-right">
-                                    <div className="font-bold text-slate-100">{formatMoney(Number(t.amount))}</div>
-                                    <span className={`inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-semibold mt-0.5 ${
-                                      t.payment_method === 'QRIS'
-                                        ? 'text-violet-400'
-                                        : 'text-emerald-400'
+                                    <div className="font-bold text-slate-100 text-xs">{formatMoney(Number(t.amount))}</div>
+                                    <span className={`text-[9px] font-semibold ${
+                                      t.payment_method === 'QRIS' ? 'text-violet-400' : 'text-emerald-400'
                                     }`}>
                                       {t.payment_method}
                                     </span>
@@ -606,14 +597,14 @@ export default function DashboardPage() {
                                   <div className="flex items-center gap-1">
                                     <button
                                       onClick={() => handleViewDetails(t)}
-                                      className="p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors"
+                                      className="p-1 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg"
                                       title="Rincian"
                                     >
                                       <Eye className="w-3.5 h-3.5" />
                                     </button>
                                     <button
                                       onClick={() => handleDeleteTransaction(t.id)}
-                                      className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                      className="p-1 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg"
                                       title="Hapus"
                                     >
                                       <Trash2 className="w-3.5 h-3.5" />
@@ -630,202 +621,96 @@ export default function DashboardPage() {
               )}
             </div>
           ) : (
-            /* VIEW MODE: FLAT LIST (DAFTAR SEMUA/TERFILTER) */
-            <>
-              {/* Desktop Table View */}
-              <div className="hidden md:block flex-1 overflow-auto rounded-xl border border-slate-800">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-900/90 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800 sticky top-0 backdrop-blur-sm z-10">
-                    <tr>
-                      <th className="px-4 py-3 font-semibold uppercase tracking-wider">No. Urut</th>
-                      <th className="px-4 py-3 font-semibold uppercase tracking-wider">No. Trx</th>
-                      <th className="px-4 py-3 font-semibold uppercase tracking-wider">Akun Kasir</th>
-                      <th className="px-4 py-3 font-semibold uppercase tracking-wider">Metode</th>
-                      <th className="px-4 py-3 font-semibold uppercase tracking-wider">Tipe</th>
-                      <th className="px-4 py-3 font-semibold uppercase tracking-wider">Total</th>
-                      <th className="px-4 py-3 font-semibold uppercase tracking-wider">Status</th>
-                      <th className="px-4 py-3 font-semibold uppercase tracking-wider">Waktu</th>
-                      <th className="px-4 py-3 font-semibold uppercase tracking-wider text-center">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/60">
-                    {filteredTransactions.length === 0 ? (
-                      <tr>
-                        <td colSpan={9} className="text-center py-16 text-slate-500">
-                          Belum ada transaksi yang sesuai kriteria filter.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredTransactions.map((t) => {
-                        const cashierName = cashierMap[t.cashier_id || ''] || 'Sistem / Offline';
-                        return (
-                          <tr key={t.id} className="hover:bg-slate-900/40 transition-colors duration-150">
-                            <td className="px-4 py-3 text-indigo-400 font-bold">
-                              {t.cashier_seq_number ? `#${t.cashier_seq_number}` : (t.daily_queue_number ? `#${t.daily_queue_number}` : '-')}
-                            </td>
-                            <td className="px-4 py-3 font-bold text-slate-300">{t.trx_number || 'PENDING'}</td>
-                            <td className="px-4 py-3 text-slate-300 font-medium max-w-[130px] truncate" title={cashierName}>
-                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-950/60 border border-slate-800 text-[11px]">
-                                <User className="w-3 h-3 text-indigo-400 shrink-0" />
-                                <span className="truncate">{cashierName}</span>
-                              </span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-medium text-[10px] ${
-                                t.payment_method === 'QRIS'
-                                  ? 'bg-violet-950/40 text-violet-300 border border-violet-900/50'
-                                  : 'bg-emerald-950/40 text-emerald-300 border border-emerald-900/50'
-                              }`}>
-                                {t.payment_method === 'QRIS' ? <QrCode className="w-3 h-3" /> : <DollarSign className="w-3 h-3" />}
-                                {t.payment_method}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-medium text-[10px] ${
-                                t.order_type === 'dine_in'
-                                  ? 'bg-blue-950/40 text-blue-300 border border-blue-900/50'
-                                  : 'bg-orange-950/40 text-orange-300 border border-orange-900/50'
-                              }`}>
-                                {t.order_type === 'dine_in' ? 'Dine In' : 'Takeaway'}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 font-semibold text-slate-100">
-                              <div>{formatMoney(Number(t.amount))}</div>
-                              {t.additions && (
-                                <div className="text-[10px] text-slate-500 font-normal mt-0.5" title={t.additions.split('+').map(x => Number(x).toLocaleString('id-ID')).join(' + ')}>
-                                  {t.additions.split('+').map(x => Number(x).toLocaleString('id-ID')).join(' + ')}
-                                </div>
-                              )}
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-md font-semibold text-[9px] ${
-                                t.status === 'PAID'
-                                  ? 'bg-green-950/30 text-green-400 border border-green-900/40'
-                                  : t.status === 'FAILED'
-                                  ? 'bg-red-950/30 text-red-400 border border-red-900/40'
-                                  : 'bg-yellow-950/30 text-yellow-400 border border-yellow-900/40'
-                              }`}>
-                                {t.status}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-slate-400">{toWIB(t.created_at)}</td>
-                            <td className="px-4 py-3 text-center">
-                              <div className="flex items-center justify-center gap-1">
-                                <button
-                                  onClick={() => handleViewDetails(t)}
-                                  className="p-1.5 text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/10 rounded-lg transition-colors"
-                                  title="Lihat Rincian"
-                                >
-                                  <Eye className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteTransaction(t.id)}
-                                  className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                                  title="Hapus Transaksi"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Mobile Card View (Optimized for Mobile) */}
-              <div className="flex-grow overflow-y-auto space-y-3 md:hidden pr-0.5">
-                {filteredTransactions.length === 0 ? (
-                  <div className="text-center py-16 text-slate-500 text-xs">Belum ada transaksi hari ini.</div>
-                ) : (
-                  filteredTransactions.map((t) => {
-                    const cashierName = cashierMap[t.cashier_id || ''] || 'Sistem / Offline';
-                    return (
-                      <div key={t.id} className="bg-slate-950/40 border border-slate-800/70 rounded-xl p-3.5 space-y-2.5 shadow-sm">
-                        <div className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2">
-                            <span className="text-indigo-400 font-extrabold text-sm">
-                              {t.cashier_seq_number ? `#${t.cashier_seq_number}` : (t.daily_queue_number ? `#${t.daily_queue_number}` : '-')}
-                            </span>
-                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-300 bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-800 max-w-[150px] truncate">
-                              <User className="w-3 h-3 text-indigo-400 shrink-0" />
-                              <span className="truncate">{cashierName}</span>
-                            </span>
-                          </div>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-md font-semibold text-[9px] ${
-                            t.status === 'PAID'
-                              ? 'bg-green-950/30 text-green-400 border border-green-900/40'
-                              : t.status === 'FAILED'
-                              ? 'bg-red-950/30 text-red-400 border border-red-900/40'
-                              : 'bg-yellow-950/30 text-yellow-400 border border-yellow-900/40'
-                          }`}>
-                            {t.status}
+            /* VIEW MODE: FLAT LIST (MOBILE CARDS LIST) */
+            <div className="space-y-2.5">
+              {filteredTransactions.length === 0 ? (
+                <div className="text-center py-12 text-slate-500 text-xs">Belum ada transaksi hari ini.</div>
+              ) : (
+                filteredTransactions.map((t) => {
+                  const cashierName = cashierMap[t.cashier_id || ''] || 'Sistem / Offline';
+                  return (
+                    <div key={t.id} className="bg-slate-950/40 border border-slate-800/70 rounded-xl p-3 space-y-2 shadow-sm">
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="text-indigo-400 font-extrabold text-sm">
+                            {t.cashier_seq_number ? `#${t.cashier_seq_number}` : (t.daily_queue_number ? `#${t.daily_queue_number}` : '-')}
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-300 bg-slate-900/80 px-2 py-0.5 rounded-md border border-slate-800 max-w-[140px] truncate">
+                            <User className="w-3 h-3 text-indigo-400 shrink-0" />
+                            <span className="truncate">{cashierName}</span>
                           </span>
                         </div>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-md font-semibold text-[9px] ${
+                          t.status === 'PAID'
+                            ? 'bg-green-950/30 text-green-400 border border-green-900/40'
+                            : t.status === 'FAILED'
+                            ? 'bg-red-950/30 text-red-400 border border-red-900/40'
+                            : 'bg-yellow-950/30 text-yellow-400 border border-yellow-900/40'
+                        }`}>
+                          {t.status}
+                        </span>
+                      </div>
 
-                        <div className="flex justify-between items-start text-xs gap-3">
-                          <div className="min-w-0">
-                            <div className="font-bold text-slate-200 truncate">{t.trx_number || 'PENDING'}</div>
-                            <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
-                              <Clock className="w-3 h-3 text-slate-500" />
-                              <span>{toWIB(t.created_at)}</span>
-                            </div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <div className="font-bold text-slate-100 text-sm">{formatMoney(Number(t.amount))}</div>
-                            {t.additions && (
-                              <div className="text-[9px] text-slate-500 mt-0.5 font-mono">
-                                +{t.additions.split('+').map(x => Number(x).toLocaleString('id-ID')).join(' + ')}
-                              </div>
-                            )}
+                      <div className="flex justify-between items-start text-xs gap-2">
+                        <div className="min-w-0">
+                          <div className="font-bold text-slate-200 text-xs truncate">{t.trx_number || 'PENDING'}</div>
+                          <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-slate-500" />
+                            <span>{toWIB(t.created_at)}</span>
                           </div>
                         </div>
-
-                        <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-[10px]">
-                          <div className="flex gap-1.5">
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${
-                              t.payment_method === 'QRIS'
-                                ? 'bg-violet-950/40 text-violet-300 border border-violet-900/50'
-                                : 'bg-emerald-950/40 text-emerald-300 border border-emerald-900/50'
-                            }`}>
-                              {t.payment_method}
-                            </span>
-                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${
-                              t.order_type === 'dine_in'
-                                ? 'bg-blue-950/40 text-blue-300 border border-blue-900/50'
-                                : 'bg-orange-950/40 text-orange-300 border border-orange-900/50'
-                            }`}>
-                              {t.order_type === 'dine_in' ? 'Dine In' : 'Takeaway'}
-                            </span>
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleViewDetails(t)}
-                              className="px-2.5 py-1 text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 rounded-lg font-semibold"
-                            >
-                              Detail
-                            </button>
-                            <button
-                              onClick={() => handleDeleteTransaction(t.id)}
-                              className="px-2.5 py-1 text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-lg font-semibold"
-                            >
-                              Hapus
-                            </button>
-                          </div>
+                        <div className="text-right shrink-0">
+                          <div className="font-bold text-slate-100 text-sm">{formatMoney(Number(t.amount))}</div>
+                          {t.additions && (
+                            <div className="text-[9px] text-slate-500 mt-0.5 font-mono">
+                              +{t.additions.split('+').map(x => Number(x).toLocaleString('id-ID')).join(' + ')}
+                            </div>
+                          )}
                         </div>
                       </div>
-                    );
-                  })
-                )}
-              </div>
-            </>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-800/60 text-[10px]">
+                        <div className="flex gap-1.5">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${
+                            t.payment_method === 'QRIS'
+                              ? 'bg-violet-950/40 text-violet-300 border border-violet-900/50'
+                              : 'bg-emerald-950/40 text-emerald-300 border border-emerald-900/50'
+                          }`}>
+                            {t.payment_method}
+                          </span>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${
+                            t.order_type === 'dine_in'
+                              ? 'bg-blue-950/40 text-blue-300 border border-blue-900/50'
+                              : 'bg-orange-950/40 text-orange-300 border border-orange-900/50'
+                          }`}>
+                            {t.order_type === 'dine_in' ? 'Dine In' : 'Takeaway'}
+                          </span>
+                        </div>
+                        <div className="flex gap-1.5">
+                          <button
+                            onClick={() => handleViewDetails(t)}
+                            className="px-2.5 py-1 text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 rounded-lg font-semibold text-[10px]"
+                          >
+                            Detail
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTransaction(t.id)}
+                            className="px-2.5 py-1 text-red-400 bg-red-500/10 hover:bg-red-500/20 rounded-lg font-semibold text-[10px]"
+                          >
+                            Hapus
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
           )}
         </div>
 
         {/* Reports Navigation & Distribution Card */}
-        <div className="backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 sm:p-6 shadow-xl flex flex-col justify-between min-h-[560px]">
+        <div className="backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-3.5 shadow-xl space-y-4">
           <div className="space-y-5">
             <div>
               <h3 className="text-base sm:text-lg font-bold text-slate-200 flex items-center gap-2">

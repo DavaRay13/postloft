@@ -13,6 +13,10 @@ import {
   Image as ImageIcon,
   Receipt,
   Store,
+  Lock,
+  Eye,
+  EyeOff,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface StoreSettings {
@@ -24,6 +28,7 @@ interface StoreSettings {
   footer_message: string;
   separator_char: string;
   logo_url: string;
+  owner_pin?: string;
 }
 
 export default function SettingsPage() {
@@ -31,6 +36,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showPin, setShowPin] = useState(false);
 
   const [settings, setSettings] = useState<StoreSettings>({
     id: '',
@@ -41,6 +47,7 @@ export default function SettingsPage() {
     footer_message: 'Terima Kasih!',
     separator_char: '=',
     logo_url: '',
+    owner_pin: '1234',
   });
 
   const [uploading, setUploading] = useState(false);
@@ -73,6 +80,12 @@ export default function SettingsPage() {
     setError(null);
     setSuccess(null);
 
+    if (settings.owner_pin && settings.owner_pin.length < 4) {
+      setError('PIN Owner minimal harus 4 digit angka (maksimal 6 digit)');
+      setSaving(false);
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('store_settings')
@@ -84,12 +97,13 @@ export default function SettingsPage() {
           footer_message: settings.footer_message,
           separator_char: settings.separator_char,
           logo_url: settings.logo_url,
+          owner_pin: settings.owner_pin || '1234',
           updated_at: new Date().toISOString(),
         })
         .eq('id', settings.id);
 
       if (error) throw error;
-      setSuccess('Pengaturan berhasil disimpan! Perubahan akan otomatis terlihat di aplikasi kasir.');
+      setSuccess('Pengaturan berhasil disimpan! PIN Owner dan konfigurasi struk akan otomatis tersinkronisasi ke aplikasi kasir mobile.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Gagal menyimpan pengaturan');
     } finally {
@@ -192,30 +206,30 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-3 sm:p-6 max-w-5xl mx-auto space-y-4 sm:space-y-6">
+    <div className="p-3 space-y-3 w-full">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+      <div className="flex items-center justify-between gap-2">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2.5">
-            <div className="p-2 sm:p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400">
-              <Receipt className="w-4 h-4 sm:w-5 sm:h-5" />
+          <h2 className="text-base font-bold text-white flex items-center gap-2">
+            <div className="p-1.5 bg-indigo-500/10 rounded-xl text-indigo-400">
+              <Receipt className="w-4 h-4" />
             </div>
-            Pengaturan Struk
+            Pengaturan Struk & PIN
           </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-0.5">Konfigurasi desain struk thermal printer 58mm</p>
+          <p className="text-[10px] text-slate-400">Desain struk & PIN Owner kasir</p>
         </div>
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 transition-all duration-200 shadow-lg shadow-indigo-600/20 active:scale-95"
+          className="flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 transition-all shadow-md shadow-indigo-600/20 active:scale-95"
         >
-          {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          {saving ? 'Menyimpan...' : 'Simpan Pengaturan'}
+          {saving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+          <span>{saving ? 'Simpan...' : 'Simpan'}</span>
         </button>
       </div>
 
       {/* Mobile Tab Switcher */}
-      <div className="flex lg:hidden bg-slate-900 border border-slate-800 rounded-xl p-1 gap-1 text-xs">
+      <div className="flex bg-slate-900 border border-slate-800 rounded-xl p-1 gap-1 text-xs">
         <button
           onClick={() => setActiveMobileTab('form')}
           className={`flex-1 py-2 rounded-lg font-semibold transition-all ${
@@ -236,23 +250,23 @@ export default function SettingsPage() {
 
       {/* Alerts */}
       {error && (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-red-950/40 border border-red-800/50 text-red-400 text-sm">
-          <AlertTriangle className="w-5 h-5 shrink-0" />
-          <span>{error}</span>
+        <div className="flex items-center gap-2 p-3 rounded-xl bg-red-950/40 border border-red-800/50 text-red-400 text-xs">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <span className="truncate">{error}</span>
           <button onClick={() => setError(null)} className="ml-auto"><X className="w-4 h-4" /></button>
         </div>
       )}
       {success && (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-green-950/40 border border-green-800/50 text-green-400 text-sm">
-          <CheckCircle2 className="w-5 h-5 shrink-0" />
-          <span>{success}</span>
+        <div className="flex items-center gap-2 p-3 rounded-xl bg-green-950/40 border border-green-800/50 text-green-400 text-xs">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <span className="truncate">{success}</span>
           <button onClick={() => setSuccess(null)} className="ml-auto"><X className="w-4 h-4" /></button>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="space-y-3">
         {/* Settings Form */}
-        <div className={`${activeMobileTab === 'form' ? 'block' : 'hidden lg:block'} backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4 sm:space-y-5`}>
+        <div className={`${activeMobileTab === 'form' ? 'block' : 'hidden'} backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-3.5 shadow-xl space-y-4`}>
           <h3 className="text-base font-bold text-slate-200 flex items-center gap-2 mb-2">
             <Store className="w-4 h-4 text-indigo-400" />
             Informasi Toko
@@ -384,10 +398,55 @@ export default function SettingsPage() {
               ))}
             </div>
           </div>
+
+          {/* Keamanan & PIN Owner Kasir */}
+          <div className="pt-5 border-t border-slate-800/80 space-y-3">
+            <h3 className="text-base font-bold text-slate-200 flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              Keamanan & PIN Owner Kasir
+            </h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              PIN ini digunakan khusus oleh Owner untuk membuka menu <b className="text-slate-200">Riwayat Transaksi</b> dan melihat ringkasan omset penjualan harian pada aplikasi mobile kasir.
+            </p>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                PIN Owner (4–6 Digit)
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                  <Lock className="w-4 h-4" />
+                </div>
+                <input
+                  type={showPin ? 'text' : 'password'}
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={settings.owner_pin || ''}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '');
+                    setSettings((p) => ({ ...p, owner_pin: val }));
+                  }}
+                  className="w-full pl-10 pr-12 py-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm font-mono tracking-widest"
+                  placeholder="1234"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPin(!showPin)}
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-200 transition-colors"
+                  title={showPin ? 'Sembunyikan PIN' : 'Tampilkan PIN'}
+                >
+                  {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-[10px] text-slate-500 mt-2">
+                PIN default awal: <span className="text-indigo-300 font-mono font-semibold">1234</span>. Hanya angka minimal 4 digit dan maksimal 6 digit.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Live Receipt Preview */}
-        <div className={`${activeMobileTab === 'preview' ? 'block' : 'hidden lg:block'} backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 sm:p-6 shadow-xl`}>
+        <div className={`${activeMobileTab === 'preview' ? 'block' : 'hidden'} backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl p-4 shadow-xl`}>
           <h3 className="text-base font-bold text-slate-200 flex items-center gap-2 mb-4">
             <Receipt className="w-4 h-4 text-indigo-400" />
             Preview Struk

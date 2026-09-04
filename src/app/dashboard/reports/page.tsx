@@ -805,109 +805,41 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="p-3 sm:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6">
-      {/* Page Header & Filters */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
+    <div className="p-3 space-y-3 w-full">
+      {/* Page Header & Actions */}
+      <div className="flex items-center justify-between gap-2">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2.5">
-            <div className="p-2 sm:p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400">
-              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
+          <h2 className="text-base font-bold text-white flex items-center gap-2">
+            <div className="p-1.5 bg-indigo-500/10 rounded-xl text-indigo-400">
+              <TrendingUp className="w-4 h-4" />
             </div>
             Laporan Keuangan
           </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-0.5">Pantau performa omset dan riwayat penjualan</p>
+          <p className="text-[10px] text-slate-400">Ringkasan omset & riwayat penjualan</p>
         </div>
 
-        {/* Filter Buttons & Export */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          {/* Mobile Filter Button Trigger */}
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => setFilterModalOpen(true)}
-            className="md:hidden flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold text-indigo-400 hover:bg-slate-800 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-[11px] font-semibold text-indigo-400 hover:bg-slate-800 transition-colors"
           >
             <Filter className="w-3.5 h-3.5" />
-            <span>Filter & Tanggal</span>
+            <span>Filter</span>
           </button>
-
-          {/* Desktop Dropdown filter cashier */}
-          <div className="hidden md:block relative">
-            <select
-              value={selectedCashierFilter}
-              onChange={(e) => setSelectedCashierFilter(e.target.value)}
-              className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 focus:outline-none focus:border-indigo-500 text-xs font-semibold appearance-none pr-8 cursor-pointer"
-              style={{
-                backgroundImage: 'url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 20 20\'%3e%3cpath stroke=\'%2394a3b8\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'1.5\' d=\'M6 8l4 4 4-4\'/%3e%3c/svg%3e")',
-                backgroundPosition: 'right 0.5rem center',
-                backgroundSize: '1.25em 1.25em',
-                backgroundRepeat: 'no-repeat'
-              }}
-            >
-              <option value="all">Semua Kasir</option>
-              <option value="system">Sistem / Tanpa Kasir</option>
-              {Object.entries(cashierMap).map(([id, email]) => (
-                <option key={id} value={id}>{email}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Desktop Filter Pills */}
-          <div className="hidden md:flex bg-slate-900 border border-slate-800 rounded-xl p-1 gap-1 text-xs">
-            <button
-              onClick={() => setFilterRange('today')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                filterRange === 'today' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Hari Ini
-            </button>
-            <button
-              onClick={() => setFilterRange('7days')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                filterRange === '7days' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              7 Hari
-            </button>
-            <button
-              onClick={() => setFilterRange('thisMonth')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                filterRange === 'thisMonth' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Bulan Ini
-            </button>
-            <button
-              onClick={() => setFilterRange('30days')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                filterRange === '30days' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              30 Hari
-            </button>
-            <button
-              onClick={() => setFilterRange('custom')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
-                filterRange === 'custom' ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Kustom
-            </button>
-          </div>
 
           <button
             onClick={handleExcelExport}
             disabled={loading || exporting}
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 transition-all duration-200 shadow-lg shadow-indigo-600/20"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 transition-all shadow-md shadow-indigo-600/20"
           >
-            {exporting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            <span className="hidden sm:inline">Ekspor Excel</span>
-            <span className="sm:hidden">Excel</span>
+            {exporting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+            <span>Excel</span>
           </button>
         </div>
       </div>
 
       {/* Mobile Scrollable Quick Filter Bar & Active Badge */}
-      <div className="md:hidden space-y-2 pt-1">
+      <div className="space-y-2 pt-0.5">
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
           <button
             onClick={() => setFilterRange('today')}
@@ -1131,50 +1063,50 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {/* STATS SUMMARY CARDS */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      {/* STATS SUMMARY CARDS (2x2 Mobile Grid) */}
+      <section className="grid grid-cols-2 gap-2">
         {/* Total Omset */}
-        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3.5 sm:p-5 shadow-xl">
-          <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-bl from-indigo-500/10 to-transparent rounded-bl-full pointer-events-none" />
-          <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">Total Omset</span>
-            <div className="p-1.5 sm:p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400"><TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></div>
+        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3 shadow-lg">
+          <div className="absolute top-0 right-0 w-14 h-14 bg-gradient-to-bl from-indigo-500/10 to-transparent rounded-bl-full pointer-events-none" />
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Total Omset</span>
+            <div className="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-400"><TrendingUp className="w-3.5 h-3.5" /></div>
           </div>
-          <h2 className="text-base sm:text-2xl font-extrabold tracking-tight text-white">{formatMoney(stats.total)}</h2>
-          <p className="text-[9px] sm:text-[10px] text-slate-500 mt-1">Pada rentang terpilih</p>
+          <h2 className="text-base font-extrabold tracking-tight text-white truncate">{formatMoney(stats.total)}</h2>
+          <p className="text-[9px] text-slate-500 mt-1">Pada rentang terpilih</p>
         </div>
 
         {/* Total Transaksi */}
-        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3.5 sm:p-5 shadow-xl">
-          <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-full pointer-events-none" />
-          <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">Total Transaksi</span>
-            <div className="p-1.5 sm:p-2.5 bg-amber-500/10 rounded-xl text-amber-400"><UsersIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></div>
+        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3 shadow-lg">
+          <div className="absolute top-0 right-0 w-14 h-14 bg-gradient-to-bl from-amber-500/10 to-transparent rounded-bl-full pointer-events-none" />
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Total Transaksi</span>
+            <div className="p-1.5 bg-amber-500/10 rounded-lg text-amber-400"><UsersIcon className="w-3.5 h-3.5" /></div>
           </div>
-          <h2 className="text-base sm:text-2xl font-extrabold tracking-tight text-white">{stats.count}</h2>
-          <p className="text-[9px] sm:text-[10px] text-slate-500 mt-1">Transaksi sukses</p>
+          <h2 className="text-base font-extrabold tracking-tight text-white">{stats.count}</h2>
+          <p className="text-[9px] text-slate-500 mt-1">Transaksi sukses</p>
         </div>
 
         {/* CASH */}
-        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3.5 sm:p-5 shadow-xl">
-          <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-bl-full pointer-events-none" />
-          <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">Omset Cash</span>
-            <div className="p-1.5 sm:p-2.5 bg-emerald-500/10 rounded-xl text-emerald-400"><DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></div>
+        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3 shadow-lg">
+          <div className="absolute top-0 right-0 w-14 h-14 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-bl-full pointer-events-none" />
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Omset Cash</span>
+            <div className="p-1.5 bg-emerald-500/10 rounded-lg text-emerald-400"><DollarSign className="w-3.5 h-3.5" /></div>
           </div>
-          <h2 className="text-base sm:text-2xl font-extrabold tracking-tight text-white">{formatMoney(stats.cash)}</h2>
-          <p className="text-[9px] sm:text-[10px] text-emerald-400 mt-1">Pembayaran tunai</p>
+          <h2 className="text-base font-extrabold tracking-tight text-white truncate">{formatMoney(stats.cash)}</h2>
+          <p className="text-[9px] text-emerald-400 mt-1">Pembayaran tunai</p>
         </div>
 
         {/* QRIS */}
-        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3.5 sm:p-5 shadow-xl">
-          <div className="absolute top-0 right-0 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-bl-full pointer-events-none" />
-          <div className="flex items-center justify-between mb-2 sm:mb-3">
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-400">Omset QRIS</span>
-            <div className="p-1.5 sm:p-2.5 bg-violet-500/10 rounded-xl text-violet-400"><QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4" /></div>
+        <div className="relative overflow-hidden backdrop-blur-md bg-slate-900/60 border border-slate-800/60 rounded-2xl p-3 shadow-lg">
+          <div className="absolute top-0 right-0 w-14 h-14 bg-gradient-to-bl from-violet-500/10 to-transparent rounded-bl-full pointer-events-none" />
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Omset QRIS</span>
+            <div className="p-1.5 bg-violet-500/10 rounded-lg text-violet-400"><QrCode className="w-3.5 h-3.5" /></div>
           </div>
-          <h2 className="text-base sm:text-2xl font-extrabold tracking-tight text-white">{formatMoney(stats.qris)}</h2>
-          <p className="text-[9px] sm:text-[10px] text-violet-400 mt-1">Pembayaran digital</p>
+          <h2 className="text-base font-extrabold tracking-tight text-white truncate">{formatMoney(stats.qris)}</h2>
+          <p className="text-[9px] text-violet-400 mt-1">Pembayaran digital</p>
         </div>
       </section>
 
@@ -1503,94 +1435,11 @@ export default function ReportsPage() {
                     </div>
                   </div>
 
-                  {/* Accordion Body */}
+                  {/* Accordion Body (Mobile Cards List) */}
                   {isExpanded && (
-                    <div className="bg-slate-950/10">
-                      {/* Desktop Table View */}
-                      <div className="hidden md:block overflow-x-auto">
-                        <table className="w-full text-left text-xs border-collapse">
-                          <thead className="bg-slate-900/60 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800/80">
-                            <tr>
-                              <th className="px-4 py-2.5">#</th>
-                              <th className="px-4 py-2.5">No Trx</th>
-                              <th className="px-4 py-2.5">Kasir</th>
-                              <th className="px-4 py-2.5">Metode</th>
-                              <th className="px-4 py-2.5">Jumlah</th>
-                              <th className="px-4 py-2.5">Status</th>
-                              <th className="px-4 py-2.5">Waktu (WIB)</th>
-                              <th className="px-4 py-2.5 text-center">Aksi</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-800/40">
-                            {group.transactions.map((t) => (
-                               <tr key={t.id} className="hover:bg-slate-900/30 transition-colors duration-150">
-                                <td className="px-4 py-2.5 text-indigo-400 font-bold">
-                                  {t.cashier_seq_number ? `#${t.cashier_seq_number}` : (t.daily_queue_number ? `#${t.daily_queue_number}` : '-')}
-                                </td>
-                                <td className="px-4 py-2.5 font-bold text-slate-300">
-                                  {t.trx_number || 'PENDING'}
-                                </td>
-                                <td className="px-4 py-2.5 text-slate-300 font-medium truncate max-w-[120px]" title={cashierMap[t.cashier_id || ''] || 'Sistem / Tanpa Kasir'}>
-                                  {cashierMap[t.cashier_id || ''] || 'Sistem / Tanpa Kasir'}
-                                </td>
-                                <td className="px-4 py-2.5">
-                                  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-medium text-[10px] ${
-                                    t.payment_method === 'QRIS'
-                                      ? 'bg-violet-950/40 text-violet-300 border border-violet-900/50'
-                                      : 'bg-emerald-950/40 text-emerald-300 border border-emerald-900/50'
-                                  }`}>
-                                    {t.payment_method === 'QRIS' ? <QrCode className="w-3 h-3" /> : <DollarSign className="w-3 h-3" />}
-                                    {t.payment_method}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-2.5 font-semibold text-slate-100">
-                                  <div>{formatMoney(Number(t.amount))}</div>
-                                  {t.additions && (
-                                    <div className="text-[10px] text-slate-500 font-normal mt-0.5" title={t.additions.split('+').map(x => Number(x).toLocaleString('id-ID')).join(' + ')}>
-                                      {t.additions.split('+').map(x => Number(x).toLocaleString('id-ID')).join(' + ')}
-                                    </div>
-                                  )}
-                                </td>
-                                <td className="px-4 py-2.5">
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md font-semibold text-[9px] ${
-                                    t.status === 'PAID'
-                                      ? 'bg-green-950/30 text-green-400 border border-green-900/40'
-                                      : t.status === 'FAILED'
-                                      ? 'bg-red-950/30 text-red-400 border border-red-900/40'
-                                      : 'bg-yellow-950/30 text-yellow-400 border border-yellow-900/40'
-                                  }`}>
-                                    {t.status}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-2.5 text-slate-400">{toWIB(t.created_at)}</td>
-                                <td className="px-4 py-2.5 text-center">
-                                  <div className="flex items-center justify-center gap-1">
-                                    <button
-                                      onClick={() => handleViewDetails(t)}
-                                      className="p-1.5 text-slate-500 hover:text-indigo-400 hover:bg-indigo-500/5 rounded-lg transition-colors"
-                                      title="Lihat Rincian"
-                                    >
-                                      <Eye className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteTransaction(t.id)}
-                                      className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                                      title="Hapus Transaksi"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      {/* Mobile Card View */}
-                      <div className="block md:hidden p-3 space-y-3">
-                        {group.transactions.map((t) => (
-                          <div key={t.id} className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-3.5 space-y-3">
+                    <div className="bg-slate-950/20 p-2.5 space-y-2.5">
+                      {group.transactions.map((t) => (
+                        <div key={t.id} className="bg-slate-950/40 border border-slate-800/80 rounded-xl p-3.5 space-y-3">
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-indigo-400 font-bold">
                                 {t.cashier_seq_number ? `#${t.cashier_seq_number}` : (t.daily_queue_number ? `#${t.daily_queue_number}` : '-')}
@@ -1663,9 +1512,8 @@ export default function ReportsPage() {
                           </div>
                         ))}
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
               );
             })
           )}

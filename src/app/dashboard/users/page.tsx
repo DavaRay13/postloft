@@ -149,110 +149,57 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="p-3 sm:p-6 max-w-4xl mx-auto space-y-4 sm:space-y-6">
+    <div className="p-3 space-y-3 w-full">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+      <div className="flex items-center justify-between gap-2">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2.5">
-            <div className="p-2 sm:p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400">
-              <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
+          <h2 className="text-base font-bold text-white flex items-center gap-2">
+            <div className="p-1.5 bg-indigo-500/10 rounded-xl text-indigo-400">
+              <Shield className="w-4 h-4" />
             </div>
-            Kelola Akun Pengguna
+            Kelola Akun
           </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-0.5">Buat dan kelola akun login untuk dashboard admin dan aplikasi kasir</p>
+          <p className="text-[10px] text-slate-400">Akun login dashboard & kasir</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 transition-all duration-200 shadow-lg shadow-indigo-600/20 active:scale-95"
+          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 transition-all shadow-md shadow-indigo-600/20 active:scale-95"
         >
-          <UserPlus className="w-4 h-4" />
-          Buat Akun Baru
+          <UserPlus className="w-3.5 h-3.5" />
+          <span>Buat Akun</span>
         </button>
       </div>
 
       {/* Alerts */}
       {error && (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-red-950/40 border border-red-800/50 text-red-400 text-sm">
-          <AlertTriangle className="w-5 h-5 shrink-0" />
-          <span>{error}</span>
-          <button onClick={() => setError(null)} className="ml-auto hover:text-red-300"><X className="w-4 h-4" /></button>
+        <div className="flex items-center gap-2 p-3 rounded-xl bg-red-950/40 border border-red-800/50 text-red-400 text-xs">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <span className="truncate">{error}</span>
+          <button onClick={() => setError(null)} className="ml-auto hover:text-red-300"><X className="w-3.5 h-3.5" /></button>
         </div>
       )}
       {success && (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-green-950/40 border border-green-800/50 text-green-400 text-sm">
-          <CheckCircle2 className="w-5 h-5 shrink-0" />
-          <span>{success}</span>
-          <button onClick={() => setSuccess(null)} className="ml-auto hover:text-green-300"><X className="w-4 h-4" /></button>
+        <div className="flex items-center gap-2 p-3 rounded-xl bg-green-950/40 border border-green-800/50 text-green-400 text-xs">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <span className="truncate">{success}</span>
+          <button onClick={() => setSuccess(null)} className="ml-auto hover:text-green-300"><X className="w-3.5 h-3.5" /></button>
         </div>
       )}
 
-      {/* Users Table */}
+      {/* Users List (Mobile Cards) */}
       <div className="backdrop-blur-md bg-slate-900/40 border border-slate-800/80 rounded-2xl overflow-hidden shadow-xl">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <RefreshCw className="w-6 h-6 animate-spin text-indigo-500 mr-3" />
-            <span className="text-sm text-slate-400">Memuat daftar akun...</span>
+            <span className="text-xs text-slate-400">Memuat daftar akun...</span>
           </div>
         ) : users.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-slate-500">
-            <UserPlus className="w-10 h-10 mb-3" />
-            <p className="text-sm">Belum ada akun terdaftar</p>
+            <UserPlus className="w-8 h-8 mb-2" />
+            <p className="text-xs">Belum ada akun terdaftar</p>
           </div>
         ) : (
-          <>
-            {/* Desktop Table View */}
-            <div className="hidden sm:block overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-900 text-slate-400 uppercase tracking-wider text-xs font-semibold border-b border-slate-800">
-                  <tr>
-                    <th className="px-6 py-4">Email</th>
-                    <th className="px-6 py-4">Peran (Role)</th>
-                    <th className="px-6 py-4">Dibuat</th>
-                    <th className="px-6 py-4">Login Terakhir</th>
-                    <th className="px-6 py-4 text-right">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  {users.map((user) => (
-                    <tr key={user.id} className="hover:bg-slate-900/30 transition-colors duration-150">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-indigo-500/15 flex items-center justify-center">
-                            <Mail className="w-4 h-4 text-indigo-400" />
-                          </div>
-                          <span className="font-medium text-slate-200">{user.email}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        {user.role === 'admin' ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
-                            Admin Dashboard
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                            Kasir
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-slate-400 text-xs">{toWIB(user.created_at)}</td>
-                      <td className="px-6 py-4 text-slate-400 text-xs">{toWIB(user.last_sign_in_at)}</td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => setDeleteTarget(user)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-950/20 border border-transparent hover:border-red-900/30 transition-all duration-200"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          Hapus
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Card View */}
-            <div className="block sm:hidden divide-y divide-slate-800/60">
+          <div className="divide-y divide-slate-800/60">
               {users.map((user) => (
                 <div key={user.id} className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
@@ -296,7 +243,6 @@ export default function UsersPage() {
                 </div>
               ))}
             </div>
-          </>
         )}
       </div>
 
